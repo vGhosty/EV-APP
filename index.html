@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EV Brain</title>
+<style>
+:root{color-scheme:dark;--bg:#11181c;--pan:#172228;--line:#2a3a42;--tx:#e6edf0;--mut:#8aa0aa;
+--soc:#6fd3b0;--pw:#f2b04a;--tp:#7fb8ff;--ds:#b79cf0;--onp:#0b1a14;--warn:#f2b04a;--bad:#ff7b72}
+:root[data-theme="light"]{color-scheme:light;--bg:#f2f5f6;--pan:#ffffff;--line:#d3dce1;--tx:#13202a;--mut:#566b78;
+--soc:#188a68;--pw:#b9740e;--tp:#2272c7;--ds:#6d4fb8;--onp:#ffffff;--warn:#b9740e;--bad:#cf3a33}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--tx);font:15px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;display:flex;flex-direction:column}
+header{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line)}
+h1{font-size:17px;margin:0 auto 0 0;font-weight:650}
+button{background:var(--pan);color:var(--tx);border:1px solid var(--line);border-radius:6px;padding:7px 12px;font:inherit;cursor:pointer}
+button.p{background:var(--soc);color:var(--onp);border-color:var(--soc);font-weight:600}
+button:focus-visible{outline:2px solid var(--tp);outline-offset:2px}
+#st{color:var(--mut);font-size:13px}
+main{flex:1;min-height:0;padding:8px 10px}
+canvas{width:100%;height:100%;display:block}
+details{border-top:1px solid var(--line);padding:8px 14px;color:var(--mut);font-size:13px}
+summary{cursor:pointer;color:var(--tx)}
+label{margin-right:12px}
+input{width:58px;background:var(--pan);color:var(--tx);border:1px solid var(--line);border-radius:4px;padding:3px 5px}
+pre{max-height:110px;overflow:auto;background:var(--pan);padding:8px;border-radius:6px;margin:8px 0 0;white-space:pre-wrap;word-break:break-all}
+header{justify-content:space-between;flex-wrap:nowrap}
+.ic{width:38px;height:38px;padding:0;display:grid;place-items:center;font-size:20px;line-height:1}
+#bfs{position:fixed;right:14px;bottom:14px;background:var(--pan);z-index:5}
+#set{display:none;border-bottom:1px solid var(--line);padding:10px 14px;color:var(--mut);font-size:13px;max-height:55vh;overflow:auto}
+#set.open{display:block}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+#st{margin:0 0 10px}
+details{border-top:none;padding:0}
+#chips{display:flex;flex-wrap:wrap;gap:6px;padding:8px 10px 0}
+.chip{display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;font-size:13px;opacity:.45}
+.chip.on{opacity:1;border-color:var(--c)}
+.chip i{width:10px;height:10px;border-radius:50%;background:var(--c)}
+.chip b{color:var(--c);font-weight:650;min-width:2.5em;text-align:right}
+#home{display:none;flex:1;padding:14px;overflow:auto;align-content:start;gap:12px;grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+#home.show{display:grid}
+#trip{display:none;flex:1;min-height:0;flex-direction:column}
+#trip.show{display:flex}
+.tile{display:flex;flex-direction:column;justify-content:space-between;gap:18px;text-align:left;min-height:130px;padding:16px;border-radius:12px;background:var(--pan);border:1px solid var(--line)}
+.tile:hover{border-color:var(--soc)}
+.tile strong{font-size:17px}
+.tile span{color:var(--soc);font-size:22px;font-weight:650}
+.tile small{display:block;color:var(--mut);font-size:13px;font-weight:400;margin-top:2px}
+#bb{display:none}
+body.sub #bb{display:grid}
+.hl{display:flex;align-items:center;gap:10px}
+#tr2{display:none;flex:1;min-height:0;flex-direction:column}
+#tr2.show{display:flex}
+#hd2{padding:12px 16px 0}
+#big2{font-size:34px;font-weight:650;line-height:1.15}
+#sub2{color:var(--mut);font-size:14px;min-height:20px}
+#stats2{display:flex;flex-wrap:wrap;gap:8px;padding:10px 12px 0}
+#stats2 div{flex:1 1 84px;background:var(--pan);border:1px solid var(--line);border-radius:10px;padding:8px 12px}
+#stats2 small{display:block;color:var(--mut);font-size:12px}
+#stats2 b{font-size:18px;color:#f2a14a;font-weight:650}
+#jr{display:none;flex:1;min-height:0;flex-direction:column;overflow-y:auto}
+#jr.show{display:flex}
+#jin{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 24px;color:var(--mut);font-size:13px}
+#jin input.w{width:auto;flex:1 1 150px;padding:8px;font-size:15px}
+#jin input[type=number]{width:64px;padding:6px}
+#jin input[type=datetime-local]{width:auto;padding:5px}
+#jin input[readonly]{opacity:.75}
+#jsug{display:grid;gap:4px;padding:0 24px}
+#jsug button{text-align:left;padding:8px 10px;font-size:14px}
+#jcal{padding:0 24px 4px;color:var(--mut);font-size:12px}
+#jmsg{padding:0 24px 6px;color:var(--mut);font-size:13px;min-height:20px}
+#jmap{height:34vh;min-height:160px;flex:none;margin:0 24px;border-radius:10px;border:1px solid var(--line);background:var(--pan)}
+#jprof,#jbat{display:none;height:208px;touch-action:pan-y;width:calc(100% - 48px);margin:8px 24px 0;border-radius:10px;border:1px solid var(--line);background:var(--pan);flex:none}
+#jres{flex:none;padding:10px 24px 70px;display:grid;gap:8px;align-content:start}
+.rt{text-align:left;padding:12px 14px;border-radius:10px;background:var(--pan);border:1px solid var(--line);display:block;width:100%}
+.rt.sel{border-color:#f2a14a}
+.rt b{font-size:18px}.rt small{display:block;color:var(--mut);font-size:13px;margin-top:2px}
+.rt .tag{color:var(--soc);font-size:12px;margin-left:6px}
+.rt .arr{font-size:16px;font-weight:650;margin-top:6px}
+#locbar{display:none;grid-column:1/-1;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 14px;border:1px solid var(--warn);border-radius:10px;background:var(--pan);font-size:14px}
+</style>
+</head>
+<body>
+<header>
+  <div class="hl"><button class="ic" id="bb" title="Back" aria-label="Back"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><h1 id="ht">EV Brain</h1></div>
+  <button class="ic" id="bs" title="Settings" aria-label="Settings" aria-expanded="false"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+</header>
+<div id="set">
+  <div id="st">Not connected. Chrome or Edge on Android or desktop is needed for Bluetooth.</div>
+  <div class="row">
+    <button class="p" id="bc">Connect iCar Pro</button>
+    <button id="bd">Demo drive</button>
+    <button id="bx">Export CSV</button>
+    <button id="br">Reset trip</button>
+    <button id="bu">Units: miles</button>
+    <button id="bg">Location: on</button>
+    <button id="bgt">Test GPS</button>
+    <button id="bth">Theme: dark</button>
+    <button id="bw">Screen: stay on</button>
+  </div>
+  <div id="gst" style="margin:0 0 6px">GPS: not started</div>
+  <div id="du" style="margin:-2px 0 10px">Elevation data used: 0 KB</div>
+  <div id="calst" style="margin:0 0 10px"></div>
+  <div class="row"><button id="bcc">Clear calibration data</button></div>
+<details>
+  <summary>Decoding setup</summary>
+  <p>Byte positions in the 220101 battery reply. Check the log, then match SoC to your dash.</p>
+  <label>SoC <input id="iS" type="number" value="7"></label>
+  <label>Current <input id="iI" type="number" value="13"></label>
+  <label>Voltage <input id="iV" type="number" value="15"></label>
+  <br><br>
+  <label>Dash SoC % <input id="dS" type="number" step="0.5"></label>
+  <button id="bf">Find SoC byte</button>
+  <button id="bv">Find voltage byte</button>
+  <br><br>
+  <label>Temp header <input id="hT" value="7B3"></label>
+  <label>Temp byte <input id="iT" type="number" value="9"></label>
+  <label>Dash outside °C <input id="dT" type="number" step="0.5"></label>
+  <button id="bt">Find temp byte</button>
+  <pre id="log">Log appears here once connected.</pre>
+</details>
+</div>
+<div id="home" class="show">
+  <div id="locbar"><span id="locmsg"></span><button class="p" id="locbtn">Allow location</button></div>
+  <button class="tile" id="tTrip"><strong>Trip detail<small>State of charge, power, temperature, distance</small></strong><span id="tl">No data yet</span></button>
+  <button class="tile" id="tTrip2"><strong>Trip<small>Battery used over distance</small></strong><span id="tl2">No data yet</span></button>
+  <button class="tile" id="tJr"><strong>Plan a journey<small>Postcode to route options and battery on arrival</small></strong><span>Routes</span></button>
+</div>
+<section id="jr">
+  <div id="jin">
+    <input id="jf" class="w" placeholder="From: postcode or address (blank = my location)" autocomplete="off">
+    <input id="jt" class="w" placeholder="To: postcode or address" autocomplete="off">
+    <label>Battery % <input id="jb" type="number" min="1" max="100"> <span id="jbs"></span></label>
+    <label>Efficiency <input id="je" type="number" step="0.1" min="1"> <span id="jeu">mi/kWh</span></label>
+    <label>Cruise speed <input id="jv" type="number" min="30" max="140"> <span id="jvu">mph</span></label>
+    <label>Leave <input id="jl" type="datetime-local"></label>
+    <label>Cabin <input id="jc" type="number" value="21" min="10" max="30"> °C</label>
+    <button class="p" id="jgo">Find routes</button>
+  </div>
+  <div id="jsug"></div>
+  <div id="jcal"></div>
+  <div id="jmsg">Enter a destination postcode or address.</div>
+  <div id="jmap"></div>
+  <canvas id="jprof"></canvas>
+  <canvas id="jbat"></canvas>
+  <div id="jres"></div>
+</section>
+<section id="tr2">
+  <div id="hd2"><div id="big2">No trip data yet</div><div id="sub2"></div></div>
+  <div id="stats2"><div><small>Started</small><b id="s0">–</b></div><div><small>Now</small><b id="s1">–</b></div><div><small>Distance</small><b id="s2">–</b></div><div><small>Climb</small><b id="s3">–</b></div><div><small>Descent</small><b id="s4">–</b></div></div>
+  <main><canvas id="cv2"></canvas></main>
+</section>
+<section id="trip"><main><canvas id="cv"></canvas></main></section>
+<button class="ic" id="bfs" title="Full screen" aria-label="Full screen"><svg id="fsi" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg></button>
+
+<script>
+const $=id=>document.getElementById(id);
+const cv=$('cv'),ctx=cv.getContext('2d');
+let rows=[],t0=0,distKm=0,lastT=0,lastRaw='',hoverX=null,demo=null,tempC=null,speed=0;
+const P=[
+ {k:'soc',n:'State of charge',u:'%',c:'--soc',d:1,min:0,max:100},
+ {k:'kw',n:'Power',u:'kW',c:'--pw',d:1},
+ {k:'tmp',n:'Outside temp',u:'°C',c:'--tp',d:1},
+ {k:'km',n:'Distance',u:'km',c:'--ds',d:2,min:0}
+];
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+function log(s){const l=$('log');l.textContent=(s+'\n'+l.textContent).slice(0,3000)}
+function status(s){$('st').textContent=s}
+
+/* ---------- drawing ---------- */
+const on={soc:true,kw:true,tmp:true,km:true};
+let unit='mi';
+const KF=()=>unit==='mi'?0.621371:1;
+const gv=(o,k)=>k==='km'&&o[k]!=null?o[k]*KF():o[k];
+const chips={};
+const chipBar=document.createElement('div');chipBar.id='chips';
+$('cv').parentElement.before(chipBar);
+P.forEach(p=>{
+  const b=document.createElement('button');b.className='chip on';b.style.setProperty('--c',`var(${p.c})`);
+  b.setAttribute('aria-pressed','true');
+  b.innerHTML='<i></i><span>'+p.n+'</span><b>–</b>';
+  b.onclick=()=>{on[p.k]=!on[p.k];b.classList.toggle('on',on[p.k]);b.setAttribute('aria-pressed',on[p.k]);draw()};
+  chipBar.appendChild(b);chips[p.k]=b.querySelector('b');
+});
+function range(vis){
+  let lo=0,hi=10;
+  vis.forEach(p=>rows.forEach(o=>{const v=gv(o,p.k);if(v!=null){if(v<lo)lo=v;if(v>hi)hi=v}}));
+  if(on.soc)hi=Math.max(hi,100);
+  const pad=(hi-lo)*.04;return[lo<0?lo-pad:0,hi+pad];
+}
+function draw(){
+  const r=cv.getBoundingClientRect(),dpr=devicePixelRatio||1;
+  if(!r.width)return;
+  cv.width=r.width*dpr;cv.height=r.height*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
+  const W=r.width,H=r.height,vis=P.filter(p=>on[p.k]),Lm=10,R=12,top=10,bot=24;
+  const pw=W-Lm-R,ph=H-top-bot;
+  const T=rows.length?Math.max(rows[rows.length-1].t,60):60;
+  const xs=t=>Lm+(t/T)*pw;
+  ctx.font='11px system-ui,sans-serif';
+  ctx.fillStyle=css('--pan');ctx.fillRect(Lm,top,pw,ph);
+  ctx.strokeStyle=css('--line');ctx.lineWidth=1;
+  for(let i=0;i<=4;i++){const y=top+ph*i/4;ctx.beginPath();ctx.moveTo(Lm,y);ctx.lineTo(W-R,y);ctx.stroke()}
+  ctx.fillStyle=css('--mut');ctx.textAlign='center';
+  for(let i=0;i<=4;i++){const t=T*i/4;ctx.fillText(fmt(t),Math.min(Math.max(xs(t),Lm+10),W-R-10),H-8)}
+  const idx=hoverX!=null&&rows.length?nearest(hoverX,xs):rows.length-1;
+  const [lo,hi]=range(vis),ys=v=>top+ph-((v-lo)/(hi-lo))*ph;
+  if(lo<0){ctx.save();ctx.setLineDash([4,4]);ctx.strokeStyle=css('--mut');ctx.globalAlpha=.6;ctx.beginPath();ctx.moveTo(Lm,ys(0));ctx.lineTo(W-R,ys(0));ctx.stroke();ctx.restore()}
+  vis.forEach(p=>{
+    const col=css(p.c);
+    ctx.beginPath();ctx.strokeStyle=col;ctx.lineWidth=2;ctx.lineJoin='round';let st=false;
+    rows.forEach(o=>{if(gv(o,p.k)==null)return;const px=xs(o.t),py=ys(gv(o,p.k));st?ctx.lineTo(px,py):ctx.moveTo(px,py);st=true});
+    ctx.stroke();
+    const o=rows[idx];
+    if(o&&gv(o,p.k)!=null){ctx.beginPath();ctx.fillStyle=col;ctx.arc(xs(o.t),ys(gv(o,p.k)),4,0,7);ctx.fill()}
+  });
+  if(hoverX!=null&&rows[idx]){const x=xs(rows[idx].t);ctx.strokeStyle=css('--tx');ctx.globalAlpha=.4;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x,top);ctx.lineTo(x,top+ph);ctx.stroke();ctx.globalAlpha=1}
+  P.forEach(p=>{const o=rows[idx],v=o?gv(o,p.k):null;chips[p.k].textContent=v==null?'–':v.toFixed(p.d)+' '+(p.k==='km'?unit:p.u)});
+}
+function nearest(px,xs){let b=-1,bd=1e9;rows.forEach((o,i)=>{const d=Math.abs(xs(o.t)-px);if(d<bd){bd=d;b=i}});return b}
+const fmt=s=>{s=Math.round(s);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
+cv.addEventListener('pointermove',e=>{hoverX=e.clientX-cv.getBoundingClientRect().left;draw()});
+cv.addEventListener('pointerleave',()=>{hoverX=null;draw()});
+addEventListener('resize',draw);
+
+
+/* ---------- Trip screen ---------- */
+let hoverX2=null;
+const cv2=$('cv2');
+function niceStep(span,max){for(const st of [0.5,1,2,5,10,20,50,100,200,500]){if(span/st<=max)return st}return 1000}
+function draw2(){
+  const r=cv2.getBoundingClientRect(),dpr=devicePixelRatio||1;if(!r.width)return;
+  cv2.width=r.width*dpr;cv2.height=r.height*dpr;const x=cv2.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);
+  const f=KF(),pts=rows.filter(o=>o.soc!=null),W=r.width,H=r.height,Lm=46,R=14,top=14,bot=30,pw=W-Lm-R,ph=H-top-bot;
+  const first=pts[0],last=pts[pts.length-1],dist=last?last.km*f:0,U=unit==='mi'?'mi':'km';
+  if(first){
+    const used=first.soc-last.soc;
+    $('big2').textContent=(used>=0?used.toFixed(1)+'% consumed':(-used).toFixed(1)+'% gained');
+    $('sub2').textContent='since the trip started';
+    $('s0').textContent=first.soc.toFixed(1)+'%';$('s1').textContent=last.soc.toFixed(1)+'%';$('s2').textContent=dist.toFixed(1)+' '+U;
+  }else{$('big2').textContent='No trip data yet';$('sub2').textContent='';$('s0').textContent=$('s1').textContent=$('s2').textContent='–'}
+  let mn=first?Math.min(...pts.map(o=>o.soc)):0,mx=first?Math.max(...pts.map(o=>o.soc)):100;
+  let lo=Math.max(0,Math.floor((mn-0.5)/5)*5),hi=Math.min(100,Math.ceil((mx+0.5)/5)*5);
+  if(hi-lo<10){if(lo+10<=100)hi=lo+10;else lo=hi-10}
+  const ty=hi-lo>40?10:5,xmax=Math.max(dist,1),xs=d=>Lm+d/xmax*pw,ys=v=>top+ph-(v-lo)/(hi-lo)*ph;
+  x.font='13px system-ui,sans-serif';x.lineWidth=1;x.strokeStyle=css('--line');x.fillStyle=css('--mut');x.textAlign='right';
+  x.setLineDash([3,4]);
+  for(let v=lo;v<=hi;v+=ty){x.beginPath();x.moveTo(Lm,ys(v));x.lineTo(W-R,ys(v));x.stroke();x.fillText(v+'%',Lm-8,ys(v)+4)}
+  x.setLineDash([]);x.beginPath();x.moveTo(Lm,top+ph);x.lineTo(W-R,top+ph);x.stroke();
+  x.textAlign='center';const sx=niceStep(xmax,6);
+  for(let d=0;d<=xmax+1e-9;d+=sx){x.fillText(d,Math.max(xs(d),Lm+4),H-9)}
+  x.textAlign='left';x.fillText(U,4,H-9);
+  if(!first)return;
+  const tp=trk.filter(p=>p.elev!=null);
+  if(tp.length>1){
+    const es=tp.map(p=>p.elev),emn=Math.min(...es),emx=Math.max(...es),span=Math.max(emx-emn,20),ey=e=>top+ph-((e-emn)/span)*ph*.38-2;
+    x.beginPath();tp.forEach((p,i)=>{const a=xs(p.d*f),b=ey(p.elev);i?x.lineTo(a,b):x.moveTo(a,b)});
+    x.lineTo(xs(tp[tp.length-1].d*f),top+ph);x.lineTo(xs(tp[0].d*f),top+ph);x.closePath();x.fillStyle='rgba(127,184,255,.2)';x.fill();
+    x.beginPath();tp.forEach((p,i)=>{const a=xs(p.d*f),b=ey(p.elev);i?x.lineTo(a,b):x.moveTo(a,b)});
+    x.strokeStyle='rgba(127,184,255,.8)';x.lineWidth=1.5;x.setLineDash([]);x.stroke();
+    x.fillStyle=css('--tp');x.textAlign='right';x.font='12px system-ui,sans-serif';x.fillText('Elevation '+Math.round(emn)+' to '+Math.round(emx)+' m',W-R-6,top+ph-6);
+  }
+  const [cu,cd]=climb();$('s3').textContent=tp.length>1?'+'+Math.round(cu)+' m':'–';$('s4').textContent=tp.length>1?'−'+Math.round(cd)+' m':'–';
+  const org='#f2a14a',pxy=o=>[xs(o.km*f),ys(o.soc)];
+  const g=x.createLinearGradient(0,top,0,top+ph);g.addColorStop(0,'rgba(242,161,74,.5)');g.addColorStop(1,'rgba(242,161,74,.04)');
+  x.beginPath();pts.forEach((o,i)=>{const [a,b]=pxy(o);i?x.lineTo(a,b):x.moveTo(a,b)});
+  const [ex]=pxy(last);x.lineTo(ex,top+ph);x.lineTo(xs(first.km*f),top+ph);x.closePath();x.fillStyle=g;x.fill();
+  x.beginPath();pts.forEach((o,i)=>{const [a,b]=pxy(o);i?x.lineTo(a,b):x.moveTo(a,b)});
+  x.strokeStyle=org;x.lineWidth=2.5;x.lineJoin='round';x.stroke();
+  let h=last;
+  if(hoverX2!=null){let bd=1e9;pts.forEach(o=>{const d=Math.abs(pxy(o)[0]-hoverX2);if(d<bd){bd=d;h=o}})}
+  const [hx,hy]=pxy(h);
+  if(hoverX2!=null){x.strokeStyle=css('--tx');x.globalAlpha=.35;x.lineWidth=1;x.beginPath();x.moveTo(hx,top);x.lineTo(hx,top+ph);x.stroke();x.globalAlpha=1}
+  x.beginPath();x.fillStyle=org;x.arc(hx,hy,5.5,0,7);x.fill();
+  if(hoverX2!=null){let t=h.soc.toFixed(1)+'% at '+(h.km*f).toFixed(1)+' '+U;if(tp.length){let nb=tp[0];tp.forEach(p=>{if(Math.abs(p.d-h.km)<Math.abs(nb.d-h.km))nb=p});t+=' · '+Math.round(nb.elev)+' m'}x.font='600 13px system-ui,sans-serif';const w=x.measureText(t).width+16,bx=Math.min(Math.max(hx-w/2,Lm),W-R-w);
+    x.fillStyle=css('--pan');x.fillRect(bx,top+2,w,24);x.strokeStyle=css('--line');x.strokeRect(bx,top+2,w,24);x.fillStyle=css('--tx');x.textAlign='left';x.fillText(t,bx+8,top+19)}
+}
+cv2.addEventListener('pointermove',e=>{hoverX2=e.clientX-cv2.getBoundingClientRect().left;draw2()});
+cv2.addEventListener('pointerleave',()=>{hoverX2=null;draw2()});
+addEventListener('resize',draw2);
+$('bu').onclick=()=>{unit=unit==='mi'?'km':'mi';$('bu').textContent='Units: '+(unit==='mi'?'miles':'kilometres');tiles();draw();draw2();['je','jv'].forEach(id=>{$(id).dataset.u=''});if(typeof jprefill==='function'){jprefill();if(routes.length)jrender()}};
+
+
+/* ---------- location and elevation ---------- */
+let trk=[],gpsId=null,lastFix=null,fetching=false,bytesUsed=0,gpsOn=true,wake=null,lastDemoD=0;
+const hav=(a,b,c,d)=>{const R=6371,t=Math.PI/180,x=(c-a)*t,y=(d-b)*t,h=Math.sin(x/2)**2+Math.cos(a*t)*Math.cos(c*t)*Math.sin(y/2)**2;return 2*R*Math.asin(Math.sqrt(h))};
+function updateData(){$('du').textContent='Elevation data used: '+(bytesUsed/1024).toFixed(0)+' KB  ·  points: '+trk.length+'  ·  looked up: '+trk.filter(p=>p.elev!=null).length}
+let gpsInfo={fix:null,err:'',perm:''};
+function gpsStatus(){
+  const g=gpsInfo,el=$('gst');let t;
+  if(!window.isSecureContext)t='GPS cannot work here: this page is not served over HTTPS, so the browser blocks location. Host it somewhere secure, such as GitHub Pages.';
+  else if(g.perm==='denied')t='GPS blocked: location permission is denied for this page. Allow it in the browser site settings, then press Test GPS.';
+  else if(g.fix){
+    const age=Math.round((Date.now()-g.fix.t)/1000);
+    t='GPS working: accuracy '+Math.round(g.fix.acc)+' m, last fix '+age+' s ago, '+g.fix.lat.toFixed(5)+', '+g.fix.lon.toFixed(5)+(g.fix.alt!=null?', altitude '+Math.round(g.fix.alt)+' m':'')+'. '+trk.length+' route points logged'+
+      (rows.length?'':' (logging starts once car data is flowing)')+(g.fix.acc>60?'. Accuracy is too poor to log yet':'')+(age>20?'. No fix for a while, is the screen on and the app in front?':'');
+  }
+  else if(g.err)t='GPS problem: '+g.err;
+  else if(gpsId!=null)t='GPS started, waiting for the first fix. This can take up to a minute, and works best outdoors.';
+  else t='GPS not started. It starts when the car connects, or press Test GPS.';
+  el.textContent=t;
+}
+setInterval(gpsStatus,1000);
+try{if(navigator.permissions)navigator.permissions.query({name:'geolocation'}).then(p=>{gpsInfo.perm=p.state;p.onchange=()=>{gpsInfo.perm=p.state}}).catch(()=>{})}catch(e){}
+function onFix(pos){
+  const c=pos.coords;gpsInfo.fix={lat:c.latitude,lon:c.longitude,acc:c.accuracy,alt:c.altitude,t:Date.now()};gpsInfo.err='';
+  if(c.accuracy>60||!rows.length)return;
+  if(!lastFix||hav(lastFix[0],lastFix[1],c.latitude,c.longitude)>=0.05){
+    lastFix=[c.latitude,c.longitude];trk.push({lat:c.latitude,lon:c.longitude,d:distKm,elev:null});
+    updateData();lookup(false);
+  }
+}
+async function startGps(){
+  if(gpsId!=null)return;
+  if(!navigator.geolocation){log('Location is not available in this browser.');return}
+  gpsId=navigator.geolocation.watchPosition(onFix,e=>{gpsInfo.err=({1:'permission denied',2:'position unavailable (no signal)',3:'timed out waiting for a fix'})[e.code]||e.message;log('Location: '+e.message)},{enableHighAccuracy:true,maximumAge:1000,timeout:30000});
+}
+function stopGps(){
+  if(gpsId!=null){navigator.geolocation.clearWatch(gpsId);gpsId=null}
+  lookup(true);
+}
+
+let lastElev=0,elevChain=Promise.resolve(),sentLog=[],onElevWait=null;
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+/* Open-Meteo counts every point toward 600/min, so we pace ourselves to 500/min */
+async function pace(n){
+  for(;;){
+    const now=Date.now();sentLog=sentLog.filter(x=>now-x[0]<61000);
+    const used=sentLog.reduce((a,x)=>a+x[1],0);
+    if(used+n<=500)break;
+    const wait=Math.max(1000,61000-(now-sentLog[0][0]));
+    if(onElevWait)onElevWait(Math.ceil(wait/1000));
+    await sleep(Math.min(wait,3000));
+  }
+  sentLog.push([Date.now(),n]);
+}
+function elevBatch(c){
+  const run=async()=>{
+    for(let tries=0;tries<3;tries++){
+      await pace(c.length);
+      const u='https://api.open-meteo.com/v1/elevation?latitude='+c.map(p=>p[0].toFixed(5)).join(',')+'&longitude='+c.map(p=>p[1].toFixed(5)).join(',');
+      const r=await fetch(u),txt=await r.text();bytesUsed+=u.length+txt.length+700;
+      if(r.status===429){sentLog.push([Date.now(),600]);continue}
+      let j;try{j=JSON.parse(txt)}catch(e){throw new Error('unexpected reply from elevation service (HTTP '+r.status+')')}
+      if(!j.elevation)throw new Error(j.reason||'elevation service error');
+      return j.elevation;
+    }
+    throw new Error('elevation service is rate limiting us, try again in a minute');
+  };
+  const p=elevChain.then(run,run);elevChain=p.catch(()=>{});return p;
+}
+/* Points are snapped to a ~100 m grid so routes that share roads share lookups, and results are kept on this device */
+const ECK='evb_elev_v1',GLAT=0.0009,GLON=0.0015;
+let ecache={};try{ecache=JSON.parse(localStorage.getItem(ECK))||{}}catch(e){}
+const ekey=p=>Math.round(p[0]/GLAT)+'_'+Math.round(p[1]/GLON);
+const ecen=k=>{const q=k.split('_');return[+q[0]*GLAT,+q[1]*GLON]};
+const elevAt=p=>ecache[ekey(p)];
+function ecacheSave(){try{const ks=Object.keys(ecache);if(ks.length>40000)ks.slice(0,ks.length-40000).forEach(k=>delete ecache[k]);localStorage.setItem(ECK,JSON.stringify(ecache))}catch(e){}}
+async function ensureElev(points,onProg){
+  const need=[...new Set(points.map(ekey).filter(k=>ecache[k]==null))];
+  if(onProg)onProg(0,need.length);
+  try{
+    for(let i=0;i<need.length;i+=100){
+      const ks=need.slice(i,i+100),el=await elevBatch(ks.map(ecen));
+      ks.forEach((k,j)=>{if(el[j]!=null)ecache[k]=Math.round(el[j]*10)/10});
+      if(onProg)onProg(Math.min(i+100,need.length),need.length);
+    }
+  }finally{ecacheSave()}
+}
+async function lookup(force){
+  if(fetching)return;
+  const idx=[];trk.forEach((p,i)=>{if(p.elev==null&&!p.skip)idx.push(i)});
+  if(idx.length<20&&!(force&&idx.length))return;
+  fetching=true;const take=idx.slice(0,100);let ok=0;
+  try{
+    await ensureElev(take.map(i=>[trk[i].lat,trk[i].lon]));
+    take.forEach(i=>{const v=elevAt([trk[i].lat,trk[i].lon]);if(v!=null){trk[i].elev=v;ok++}else trk[i].skip=true});
+  }catch(e){log('Elevation lookup failed: '+e.message)}
+  fetching=false;updateData();draw2();
+  if(ok&&idx.length-take.length>=20)lookup(false);
+}
+setInterval(()=>lookup(true),60000);
+function climb(){
+  let up=0,dn=0,ref=null;
+  trk.forEach(p=>{if(p.elev==null)return;if(ref==null){ref=p.elev;return}const d=p.elev-ref;if(d>=3){up+=d;ref=p.elev}else if(d<=-3){dn-=d;ref=p.elev}});
+  return[up,dn];
+}
+$('bgt').onclick=()=>{gpsOn=true;$('bg').textContent='Location: on';gpsInfo.err='';startGps();gpsStatus()};
+$('bg').onclick=()=>{gpsOn=!gpsOn;$('bg').textContent='Location: '+(gpsOn?'on':'off');if(!gpsOn)stopGps();else if(connected)startGps()};
+
+/* ---------- sample handling ---------- */
+function addSample(soc,kw,tmp,spd){
+  const now=performance.now()/1000;if(!t0){t0=now;lastT=now}
+  const dt=now-lastT;distKm+=(spd||0)*dt/3600;if(kw!=null)kwh+=kw*dt/3600;lastT=now;
+  rows.push({t:now-t0,soc,kw,tmp,km:distKm,spd,e:kwh});
+  if(!demo&&now-lastSave>60){lastSave=now;saveTrip()}draw();tiles();draw2();
+  const rs=Math.round(soc);if(rs!==lastJ){lastJ=rs;if($('jr').classList.contains('show')){jsync();if(routes.length)jrender()}}
+}
+let kwh=0;
+function eff(){
+  const d=distKm*KF();return (kwh>0.1&&d>0.1?(d/kwh).toFixed(2):'–')+' '+unit+'/kWh';
+}
+function tiles(){
+  const l=rows[rows.length-1];
+  if(!l){$('tl').textContent=$('tl2').textContent='No data yet';return}
+  const u0=rows[0].soc-l.soc,e='<small>'+eff()+' average</small>';
+  $('tl').innerHTML=Math.round(l.soc)+'%  ·  '+(l.kw==null?'–':l.kw.toFixed(1))+' kW'+e;
+  $('tl2').innerHTML=(u0>=0?u0.toFixed(1)+'% used':(-u0).toFixed(1)+'% gained')+e;
+}
+$('br').onclick=()=>{if(!demo)saveTrip();tripId=null;rows=[];t0=0;distKm=0;kwh=0;trk=[];lastFix=null;bytesUsed=0;updateData();tiles();draw();draw2()};
+$('bx').onclick=()=>{
+  const c='time_s,soc_pct,power_kw,outside_c,distance_km,speed_kmh\n'+rows.map(o=>[o.t.toFixed(1),o.soc,o.kw,o.tmp,o.km.toFixed(3),o.spd].join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([c],{type:'text/csv'}));a.download='eniro-trip.csv';a.click();
+};
+
+/* ---------- ELM327 over BLE ---------- */
+let wr=null,buf='',waiter=null,connected=false;
+const enc=new TextEncoder();
+function onData(e){buf+=new TextDecoder().decode(e.target.value);if(buf.includes('>')&&waiter){const w=waiter;waiter=null;const r=buf;buf='';w(r)}}
+function send(cmd,ms=4000){
+  return new Promise(res=>{
+    buf='';const to=setTimeout(()=>{waiter=null;res('TIMEOUT')},ms);
+    waiter=r=>{clearTimeout(to);res(r)};
+    const d=enc.encode(cmd+'\r');
+    (async()=>{for(let i=0;i<d.length;i+=20){await (wr.writeValueWithoutResponse?wr.writeValueWithoutResponse(d.slice(i,i+20)):wr.writeValue(d.slice(i,i+20)))}})().catch(e=>{clearTimeout(to);waiter=null;res('ERR '+e)});
+  });
+}
+function bytes(resp){
+  const ls=resp.replace(/>/g,'').split(/[\r\n]+/).map(s=>s.trim()).filter(Boolean);
+  let hex='';const multi=ls.some(l=>/^[0-9A-F]:/.test(l));
+  ls.forEach(l=>{
+    if(/^(SEARCHING|BUS|NO DATA|UNABLE|\?|STOPPED|CAN ERROR|ERR|TIMEOUT)/i.test(l))return;
+    if(multi){if(/^[0-9A-F]:/.test(l))hex+=l.slice(2).replace(/\s/g,'')}
+    else if(/^[0-9A-F\s]+$/.test(l))hex+=l.replace(/\s/g,'');
+  });
+  const b=[];for(let i=0;i+1<hex.length;i+=2)b.push(parseInt(hex.substr(i,2),16));return b;
+}
+async function connect(){
+  try{
+    const dev=await navigator.bluetooth.requestDevice({acceptAllDevices:true,
+      optionalServices:[0xfff0,0xffe0,0xff00,0x18f0,'e7810a71-73ae-499d-8c15-faa9aef0c3f2']});
+    status('Connecting to '+(dev.name||'device')+'…');
+    const srv=await dev.gatt.connect();let nt=null;wr=null;
+    for(const s of await srv.getPrimaryServices()){
+      for(const c of await s.getCharacteristics()){
+        if(c.properties.notify&&!nt)nt=c;
+        if((c.properties.write||c.properties.writeWithoutResponse)&&!wr)wr=c;
+      }
+      if(nt&&wr)break;
+    }
+    if(!nt||!wr)throw new Error('No serial characteristics found');
+    await nt.startNotifications();nt.addEventListener('characteristicvaluechanged',onData);
+    dev.addEventListener('gattserverdisconnected',()=>{connected=false;stopGps();saveTrip();status('Disconnected.')});
+    connected=true;stopDemo();if(gpsOn)startGps();
+    for(const c of ['ATZ','ATE0','ATL0','ATS0','ATH0','ATSP6','ATCAF1']){const r=await send(c);log(c+' → '+r.replace(/\s+/g,' '))}
+    status('Connected. Turn the car on (Ready) to get data.');
+    poll();
+  }catch(e){status('Could not connect: '+e.message);log(String(e))}
+}
+let n=0;
+async function poll(){
+  while(connected){
+    await send('ATSH7E4');
+    const r1=await send('220101');lastRaw=r1;
+    const p=bytes(r1);
+    let soc=null,kw=null;
+    if(p.length>20&&p[0]===0x62){
+      const iS=+$('iS').value,iI=+$('iI').value,iV=+$('iV').value;
+      soc=p[iS]/2;
+      const cur=((p[iI]<<8|p[iI+1])<<16>>16)/10,vol=(p[iV]<<8|p[iV+1])/10;
+      kw=cur*vol/1000;   // + = discharging, - = regen/charging
+      if(n++%15===0)log('2101 bytes: '+p.map(x=>x.toString(16).padStart(2,'0')).join(' '));
+    }else if(n++%5===0)log('220101: '+r1.replace(/\s+/g,' '));
+    await send('ATSH7DF');
+    const sp=bytes(await send('010D'));if(sp[0]===0x41)speed=sp[2];
+    if(n%6===0){
+      await send('ATSH'+$('hT').value.trim());
+      const rt=await send('220100');window.lastTemp=rt;const t=bytes(rt),ti=+$('iT').value;
+      if(t[0]===0x62&&t.length>ti)tempC=t[ti]/2-40;
+      if(tempC==null||n%36===0)log('220100 ('+$('hT').value+'): '+(t.length?t.map(x=>x.toString(16).padStart(2,'0')).join(' '):rt.replace(/\s+/g,' ')));
+    }
+    if(soc!=null)addSample(soc,kw,tempC,speed);
+  }
+}
+$('bc').onclick=()=>{if(!navigator.bluetooth){status('Web Bluetooth is not available here. Use Chrome or Edge on Android or desktop.');return}connect()};
+
+/* ---------- calibration helpers ---------- */
+function lastBytes(){return bytes(lastRaw)}
+$('bf').onclick=()=>{
+  const d=+$('dS').value,p=lastBytes();if(!d||p.length<10){log('Enter your dash SoC and wait for a 220101 reply.');return}
+  const hit=p.map((v,i)=>[i,v/2]).filter(([i,v])=>Math.abs(v-d)<=0.6).map(x=>x[0]);
+  log('Bytes that read as '+d+'% : '+(hit.join(', ')||'none'));if(hit.length)$('iS').value=hit[0];
+};
+$('bv').onclick=()=>{
+  const p=lastBytes(),hit=[];
+  for(let i=0;i+1<p.length;i++){const v=(p[i]<<8|p[i+1])/10;if(v>300&&v<430)hit.push(i+' ('+v+' V)')}
+  log('Possible pack voltage at: '+(hit.join(', ')||'none'));
+  if(hit.length){const i=parseInt(hit[0]);$('iV').value=i;$('iI').value=i-2}
+};
+
+$('bt').onclick=()=>{
+  const d=+$('dT').value,p=bytes(window.lastTemp||'');
+  if(p.length<5){log('No 220100 reply yet. Connect and check the log for the raw reply.');return}
+  const hit=[];p.forEach((v,i)=>{if(Math.abs(v/2-40-d)<=1)hit.push(i+' ('+(v/2-40)+'°C)')});
+  log('Bytes near '+d+'°C: '+(hit.join(', ')||'none')+'\nAll bytes: '+p.map(x=>x.toString(16).padStart(2,'0')).join(' '));
+  if(hit.length)$('iT').value=parseInt(hit[0]);
+};
+
+/* ---------- screens ---------- */
+function show(v){
+  $('home').classList.toggle('show',v==='home');$('trip').classList.toggle('show',v==='trip');$('tr2').classList.toggle('show',v==='tr2');$('jr').classList.toggle('show',v==='jr');
+  if(v==='jr'){jprefill();if(routes.length)jrender();if(jmap)setTimeout(()=>{jmap.resize();jdraw();windRebuild()},60)}
+  document.body.classList.toggle('sub',v!=='home');$('ht').textContent={trip:'Trip detail',tr2:'Trip',jr:'Plan a journey',home:'EV Brain'}[v];
+  requestAnimationFrame(()=>{draw();draw2()});
+}
+$('tTrip2').onclick=()=>show('tr2');
+$('tTrip').onclick=()=>show('trip');
+$('bb').onclick=()=>show('home');
+
+
+
+/* ---------- calibration from your own trips ---------- */
+const CK='evb_cal_v4',fsp=v=>0.55+0.45*Math.pow(v/80,2);
+let CAL=null,calKm=0,tripId=null,lastSave=0;
+function hyst(seq,th){let up=0,dn=0,ref=null;seq.forEach(e=>{if(ref==null){ref=e;return}const d=e-ref;if(d>=th){up+=d;ref=e}else if(d<=-th){dn-=d;ref=e}});return[up,dn]}
+const loadStore=()=>{try{return JSON.parse(localStorage.getItem(CK))||{trips:{}}}catch(e){return{trips:{}}}};
+const saveStore=o=>{try{localStorage.setItem(CK,JSON.stringify(o))}catch(e){}};
+function buildSegs(){
+  const segs=[];if(rows.length<2||trk.length<5)return segs;
+  const at=d=>{
+    let lo=0,hi=rows.length-1;if(d<=rows[0].km)return rows[0];if(d>=rows[hi].km)return rows[hi];
+    while(hi-lo>1){const m=(lo+hi)>>1;if(rows[m].km<=d)lo=m;else hi=m}
+    const a=rows[lo],b=rows[hi],k=(d-a.km)/((b.km-a.km)||1);return{t:a.t+(b.t-a.t)*k,e:a.e+(b.e-a.e)*k};
+  };
+  const maxD=rows[rows.length-1].km,ep=trk.filter(p=>p.elev!=null);
+  for(let k=0;k+2<=maxD;k+=2){
+    const a=at(k),b=at(k+2),dt=b.t-a.t;if(dt<=0||dt>1800)continue;
+    const v=7200/dt;if(v<10)continue;
+    const pw=[];ep.forEach(p=>{if(p.d>=k&&p.d<=k+2&&(!pw.length||p.d-pw[pw.length-1].d>=0.095))pw.push(p)});
+    if(pw.length<15||pw[0].d-k>0.15||k+2-pw[pw.length-1].d>0.15)continue;
+    const [up,dn]=hyst(pw.map(p=>p.elev),5);
+    segs.push([2,+(b.e-a.e).toFixed(4),+v.toFixed(1),+up.toFixed(1),+dn.toFixed(1)]);
+  }
+  return segs;
+}
+function saveTrip(){
+  if(!rows.length)return;if(!tripId)tripId=String(Date.now());
+  const st=loadStore(),segs=buildSegs();
+  if(segs.length)st.trips[tripId]=segs;else delete st.trips[tripId];
+  let ids=Object.keys(st.trips).sort(),tot=ids.reduce((n,i)=>n+st.trips[i].length,0);
+  while(tot>800&&ids.length>1){tot-=st.trips[ids[0]].length;delete st.trips[ids[0]];ids.shift()}
+  saveStore(st);fitCal();
+}
+function solve3(A,B){
+  const M=A.map((r,i)=>[...r,B[i]]);
+  for(let i=0;i<3;i++){
+    let p=i;for(let r=i+1;r<3;r++)if(Math.abs(M[r][i])>Math.abs(M[p][i]))p=r;
+    if(Math.abs(M[p][i])<1e-9)return null;[M[i],M[p]]=[M[p],M[i]];
+    for(let r=0;r<3;r++)if(r!==i){const f=M[r][i]/M[i][i];for(let c=i;c<4;c++)M[r][c]-=f*M[i][c]}
+  }
+  return M.map((r,i)=>r[3]/r[i]);
+}
+function fitCal(){
+  const S=[];Object.values(loadStore().trips).forEach(a=>a.forEach(x=>S.push(x)));
+  calKm=S.length*2;CAL=null;
+  const cl=S.reduce((n,x)=>n+x[3],0),ds=S.reduce((n,x)=>n+x[4],0);
+  if(S.length>=15&&cl>=100&&ds>=100){
+    const A=[[0,0,0],[0,0,0],[0,0,0]],B=[0,0,0];
+    S.forEach(x=>{const v=[x[0]*fsp(x[2]),x[3],x[4]];for(let i=0;i<3;i++){B[i]+=v[i]*x[1];for(let j=0;j<3;j++)A[i][j]+=v[i]*v[j]}});
+    const b=solve3(A,B);
+    if(b){const c=b[0],u=b[1],d=-b[2];if(c>0.08&&c<0.3&&u>0.003&&u<0.012&&d>=0&&d<=u)CAL={c,u,d}}
+  }
+  calNote();
+}
+function calNote(){
+  const t=CAL?'Hill figures calibrated from '+calKm+' km of your driving: '+(CAL.u*1000).toFixed(1)+' Wh per metre climbed, '+(CAL.d*1000).toFixed(1)+' Wh per metre recovered on descents.'
+    :'Using default hill figures. Calibration needs about 30 km of driving with hills ('+calKm+' km logged so far).';
+  if($('calst'))$('calst').textContent=t+' Stored on this device only.';
+  if($('jcal'))$('jcal').textContent=t;
+}
+$('bcc').onclick=()=>{try{localStorage.removeItem(CK)}catch(e){}tripId=null;fitCal()};
+addEventListener('pagehide',()=>{if(!demo)saveTrip()});
+
+/* ---------- journey planner ---------- */
+let jmap=null,jmk=[],routes=[],jsel=0,leaf=null;
+function loadMap(){
+  if(leaf)return leaf;
+  leaf=new Promise((res,rej)=>{
+    const l=document.createElement('link');l.rel='stylesheet';l.href='https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.css';document.head.appendChild(l);
+    const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js';sc.onload=res;sc.onerror=()=>rej(new Error('Could not load the map library'));document.head.appendChild(sc);
+  });return leaf;
+}
+const curTheme=()=>document.documentElement.dataset.theme==='light'?'light':'dark';
+const mapStyle=()=>'https://tiles.openfreemap.org/styles/'+(curTheme()==='light'?'positron':'dark');
+function routeLayers(){
+  if(jmap.getSource('routes'))return;
+  jmap.addSource('routes',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
+  const lay={'line-cap':'round','line-join':'round'};
+  jmap.addLayer({id:'r-other',type:'line',source:'routes',filter:['==',['get','sel'],0],layout:lay,paint:{'line-color':'#8aa0aa','line-width':4,'line-opacity':.8}});
+  jmap.addLayer({id:'r-sel',type:'line',source:'routes',filter:['==',['get','sel'],1],layout:lay,paint:{'line-color':'#f2a14a','line-width':6}});
+}
+async function ensureMap(){
+  await loadMap();
+  if(jmap)return;
+  jmap=new maplibregl.Map({container:'jmap',style:mapStyle(),center:[-3,54.5],zoom:4.5,cooperativeGestures:true,attributionControl:{compact:true}});
+  let er=false;jmap.on('error',()=>{if(!er){er=true;$('jmsg').textContent='The map did not load fully, but the routes below still work.'}});
+  await new Promise(r=>jmap.once('load',r));
+  routeLayers();
+  jmap.on('style.load',()=>{routeLayers();jdraw()});
+}
+async function geocode(q){
+  const r=await fetch('https://api.postcodes.io/postcodes/'+encodeURIComponent(q.trim())),j=await r.json();
+  if(j.status!==200)throw new Error('Postcode not found: '+q.trim());
+  return[j.result.latitude,j.result.longitude];
+}
+const myLoc=()=>new Promise((ok,no)=>{if(!navigator.geolocation)return no(new Error('Location not available. Enter a From postcode.'));navigator.geolocation.getCurrentPosition(p=>ok([p.coords.latitude,p.coords.longitude]),()=>no(new Error('Could not get your location. Enter a From postcode.')),{enableHighAccuracy:true,timeout:15000})});
+function sampleRoute(r){
+  const sg=r.ann&&r.ann.speed&&r.ann.speed.length===r.pts.length-1?r.ann.speed:null,avg=r.km/(r.min/60);
+  let pp=[r.pts[0]],carry=0;const SP=0.1,sr=[sg?sg[0]*3.6:avg];
+  for(let i=1;i<r.pts.length;i++){
+    const a=r.pts[i-1],b=r.pts[i],L=hav(a[0],a[1],b[0],b[1]);if(L<=0)continue;
+    let pos=SP-carry;
+    while(pos<=L){const f=pos/L;pp.push([a[0]+(b[0]-a[0])*f,a[1]+(b[1]-a[1])*f]);sr.push(sg?sg[i-1]*3.6:avg);pos+=SP}
+    carry=L-(pos-SP);
+  }
+  if(pp.length>3000){const st=Math.ceil(pp.length/3000);r.sraw=sr.filter((p,i)=>i%st===0);pp=pp.filter((p,i)=>i%st===0)}else r.sraw=sr;
+  r.samples=pp;
+  const R=Math.PI/180;
+  r.hd=pp.map((p,i)=>{const a=pp[Math.max(0,i-3)],b=pp[Math.min(pp.length-1,i+3)],dl=(b[1]-a[1])*R;
+    return Math.atan2(Math.sin(dl)*Math.cos(b[0]*R),Math.cos(a[0]*R)*Math.sin(b[0]*R)-Math.sin(a[0]*R)*Math.cos(b[0]*R)*Math.cos(dl))});
+}
+function fillRoute(r){
+  r.up=r.dn=0;r.hasElev=false;
+  const el=r.samples.map(elevAt);
+  if(el.some(v=>v==null)){r.err=r.err||'some elevation points are missing';return}
+  [r.up,r.dn]=hyst(el,5);r.hasElev=true;r.el=el;
+}
+
+const UKPC=/^[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}$/i;
+let jch={jf:null,jt:null},jtm=null;
+async function photon(q){
+  const j=await (await fetch('https://photon.komoot.io/api/?limit=5&lang=en&bbox=-8.7,49.8,1.9,60.9&q='+encodeURIComponent(q))).json();
+  return j.features||[];
+}
+const fmtPlace=f=>{const x=f.properties,st=[x.housenumber,x.street].filter(Boolean).join(' ');
+  return [x.name!==st?x.name:null,st,x.city||x.town||x.village||x.district,x.postcode].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i).join(', ')};
+async function place(id){
+  const q=$(id).value.trim();
+  if(jch[id])return jch[id];
+  if(UKPC.test(q))return geocode(q);
+  const f=await photon(q);if(!f.length)throw new Error('Address not found: '+q);
+  return[f[0].geometry.coordinates[1],f[0].geometry.coordinates[0]];
+}
+['jf','jt'].forEach(id=>$(id).addEventListener('input',()=>{
+  jch[id]=null;clearTimeout(jtm);const q=$(id).value.trim(),box=$('jsug');box.innerHTML='';
+  if(q.length<4||UKPC.test(q))return;
+  jtm=setTimeout(async()=>{
+    try{
+      const fs=await photon(q);box.innerHTML='';
+      fs.forEach(f=>{const b=document.createElement('button');b.textContent=fmtPlace(f);
+        b.onclick=()=>{$(id).value=b.textContent;jch[id]=[f.geometry.coordinates[1],f.geometry.coordinates[0]];box.innerHTML=''};box.appendChild(b)});
+    }catch(e){}
+  },500);
+}));
+function jsync(){
+  const b=$('jb'),has=rows.length>0;
+  b.readOnly=has;
+  if(has)b.value=Math.round(rows[rows.length-1].soc);else if(!b.value)b.value=80;
+  $('jbs').textContent=has?'from car':'enter manually';
+}
+let lastJ=null;
+function jprefill(){
+  const b=$('jb'),e=$('je'),v=$('jv');$('jeu').textContent=unit+'/kWh';$('jvu').textContent=unit==='mi'?'mph':'km/h';
+  if(v.dataset.u!=='1')v.value=unit==='mi'?70:112;
+  const l=$('jl');if(!l.value||l.dataset.u!=='1')l.value=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,16);
+  jsync();
+  if(e.dataset.u!=='1')e.value=(CAL?KF()/CAL.c:(kwh>0.5&&distKm>3?(distKm*KF()/kwh):4*(unit==='mi'?1:1/0.621371))).toFixed(1);
+}
+['je','jv','jl','jc'].forEach(id=>$(id).addEventListener('input',()=>{$(id).dataset.u='1';if(routes.length)jrender()}));
+let jpar=null,wx=null,wxErr='';
+/* The UK Met Office forecast behind this has a 2 km grid, so weather is looked up for every ~2 km cell the routes pass through */
+const WLAT=0.02,WLON=0.03;
+const wkey=(p,g)=>Math.round(p[0]/(WLAT*g))+'_'+Math.round(p[1]/(WLON*g));
+const wcen=(k,g)=>{const q=k.split('_');return[+q[0]*WLAT*g,+q[1]*WLON*g]};
+function wxWindow(){
+  const dep=Date.parse($('jl').value)||Date.now(),H=3600000;
+  const hrs=Math.max(...routes.map(r=>r.min))*1.3/60+1.5;
+  return{t0:Math.floor((dep-H)/H)*H,t1:Math.ceil((dep+hrs*H)/H)*H};
+}
+/* hourly temperature and wind for a list of [lat,lon] points, 50 per request */
+async function wxPoints(pts,t0,t1){
+  const fm=ms=>new Date(ms).toISOString().slice(0,16),out=[];
+  for(let i=0;i<pts.length;i+=50){
+    const part=pts.slice(i,i+50);
+    const u='https://api.open-meteo.com/v1/forecast?latitude='+part.map(p=>p[0].toFixed(3)).join(',')+'&longitude='+part.map(p=>p[1].toFixed(3)).join(',')+
+      '&hourly=temperature_2m,wind_speed_10m,wind_direction_10m&wind_speed_unit=ms&timezone=UTC&start_hour='+fm(t0)+'&end_hour='+fm(t1);
+    let j=null;
+    for(let tries=0;tries<3;tries++){
+      await pace(part.length);
+      const r=await fetch(u),txt=await r.text();
+      if(r.status===429){sentLog.push([Date.now(),600]);continue}
+      try{j=JSON.parse(txt)}catch(e){throw new Error('unexpected forecast reply (HTTP '+r.status+')')}
+      break;
+    }
+    if(!j)throw new Error('forecast service is rate limiting us, try again in a minute');
+    const arr=Array.isArray(j)?j:[j];
+    if(!arr[0]||!arr[0].hourly)throw new Error(j.reason||'no forecast returned');
+    arr.forEach(o=>{const h=o.hourly,sp=h.wind_speed_10m||h.temperature_2m.map(()=>0),dr=h.wind_direction_10m||sp.map(()=>0);
+      out.push({times:h.time.map(t=>Date.parse(t+'Z')),temps:h.temperature_2m,
+        fx:sp.map((v,q)=>v*Math.sin(dr[q]*Math.PI/180)),fy:sp.map((v,q)=>v*Math.cos(dr[q]*Math.PI/180))})});
+  }
+  return out;
+}
+/* Weather for every ~2 km cell the routes pass through */
+async function fetchWx(){
+  const w=wxWindow();let g=1,keys;
+  for(;;){const set=new Set();routes.forEach(r=>r.samples.forEach(p=>set.add(wkey(p,g))));keys=[...set];if(keys.length<=200||g>=16)break;g*=2}
+  const res=await wxPoints(keys.map(k=>wcen(k,g)),w.t0,w.t1),cells={};
+  keys.forEach((k,i)=>{cells[k]=res[i]});
+  return{g,cells,any:res[0]};
+}
+function lerpAt(a,arr,tms){
+  const ts=a.times;let k=Math.floor((tms-ts[0])/3600000);k=Math.max(0,Math.min(ts.length-2,k));
+  const w=Math.max(0,Math.min(1,(tms-ts[k])/3600000));return arr[k]+(arr[k+1]-arr[k])*w;
+}
+function wxAt(p,tms){
+  const A=wx.cells[wkey(p,wx.g)]||wx.any;
+  return{T:lerpAt(A,A.temps,tms),fx:lerpAt(A,A.fx,tms),fy:lerpAt(A,A.fy,tms)};
+}
+function jcalc(){
+  const startPct=+$('jb').value||80,kmPerKwh=(+$('je').value||4)/KF(),cons=1/kmPerKwh,cu=CAL?CAL.u:0.0056,cd=CAL?CAL.d:0.0029;
+  const cruise=(+$('jv').value||70)/KF(),k=cruise/90;   // road-data speeds are scaled so the fastest roads run at your cruise speed
+  const dep=Date.parse($('jl').value)||Date.now(),cab=+$('jc').value||21;
+  routes.forEach(r=>{
+    const n=r.samples.length,sp=r.km/(n-1);
+    r.vs=r.sraw.map(v=>Math.min(Math.max(v*k,5),cruise));
+    let flat=0,hrs=0,eC=0,eH=0,eHead=0,eTail=0,wsum=0;r.cum=[0];r.T=[];r.WH=[];
+    for(let i=1;i<n;i++){
+      const v=r.vs[i],dt=sp/v,W=wx?wxAt(r.samples[i],dep+(hrs+dt/2)*3.6e6):null,T=W?W.T:null;r.T[i]=T;
+      let e=sp*cons*fsp(v);const base=e;
+      if(T!=null){
+        const mc=1+0.004*Math.max(0,15-T);eC+=e*(mc-1);e*=mc;                          // cold battery and drivetrain
+        const ph=T<cab?0.10*(cab-T):T>24?Math.min(0.08*(T-24),2):0;eH+=ph*dt;e+=ph*dt; // cabin heating or A/C, kW x hours
+        // wind: change in aerodynamic force when the air speed over the car is the car speed plus the headwind component
+        const h=r.hd[i],wh=W.fx*Math.sin(h)+W.fy*Math.cos(h),vm=v/3.6,va=vm+wh*0.7,rho=1.225*288.15/(273.15+T);
+        let dE=0.5*rho*0.70*(va*Math.abs(va)-vm*vm)*sp*1000/3.6e6/0.85;
+        dE=Math.max(dE,-0.7*base);if(dE>0)eHead+=dE;else eTail-=dE;e+=dE;wsum+=Math.hypot(W.fx,W.fy);r.WH[i]=wh;
+      }
+      flat+=e;hrs+=dt;r.cum.push(flat);
+    }
+    r.T[0]=r.T[1];r.WH[0]=r.WH[1];r.eCold=eC;r.eHvac=eH;r.eHead=eHead;r.eTail=eTail;r.wavg=wsum/(n-1);
+    const tv=r.T.filter(v=>v!=null);r.Tmin=tv.length?Math.min(...tv):null;r.Tmax=tv.length?Math.max(...tv):null;
+    r.tmin=hrs*60;r.vavg=r.km/hrs;
+    r.kwh=Math.max(flat+r.up*cu-r.dn*cd,0);
+    r.arr=startPct-r.kwh/64*100;
+  });
+  jpar={cons,cu,cd,start:startPct,cab};
+  const mt=Math.min(...routes.map(r=>r.tmin)),md=Math.min(...routes.map(r=>r.km)),me=Math.min(...routes.map(r=>r.kwh));
+  routes.forEach(r=>{r.tags=[];if(r.tmin===mt)r.tags.push('Fastest');if(r.km===md)r.tags.push('Shortest');if(r.kwh===me)r.tags.push('Most efficient')});
+}
+function jrender(){
+  jcalc();const U=unit,f=KF();
+  $('jres').innerHTML='';
+  routes.forEach((r,i)=>{
+    const h=Math.floor(r.tmin/60),m=Math.round(r.tmin%60),b=document.createElement('button');
+    b.className='rt'+(i===jsel?' sel':'');
+    const col=r.arr<10?'var(--bad)':r.arr<20?'var(--warn)':'var(--soc)',note=r.arr<10?' · charge needed':'';
+    b.innerHTML='<b>'+(h?h+' h ':'')+m+' min · '+(r.km*f).toFixed(1)+' '+U+'</b>'+(r.tags.length?'<span class="tag">'+r.tags.join(' · ')+'</span>':'')+
+      '<div class="arr" style="color:'+col+'">Arrive with about '+Math.max(r.arr,0).toFixed(0)+'%'+note+'</div>'+
+      '<small>Average '+Math.round(r.vavg*f)+' '+(unit==='mi'?'mph':'km/h')+' · uses about '+r.kwh.toFixed(1)+' kWh ('+(r.kwh/64*100).toFixed(0)+'%)'+(r.hasElev?' · climb '+Math.round(r.up)+' m, descent '+Math.round(r.dn)+' m':' · elevation unavailable'+(r.err?' ('+r.err+')':''))+'</small>'+(r.Tmin!=null?'<small>'+(Math.round(r.Tmin)===Math.round(r.Tmax)?Math.round(r.Tmin):Math.round(r.Tmin)+' to '+Math.round(r.Tmax))+' °C · '+((r.Tmin+r.Tmax)/2<jpar.cab?'heating':'A/C')+' about '+r.eHvac.toFixed(1)+' kWh ('+(r.eHvac/64*100).toFixed(1)+'%)'+(r.eCold>0.05?' · cold battery +'+r.eCold.toFixed(1)+' kWh':'')+'</small><small>Wind '+Math.round(r.wavg*(unit==='mi'?2.237:3.6))+' '+(unit==='mi'?'mph':'km/h')+' · headwind adds '+r.eHead.toFixed(1)+' kWh, tailwind saves '+r.eTail.toFixed(1)+' kWh</small>':'');
+    b.onclick=()=>{jsel=i;jrender();jdraw()};$('jres').appendChild(b);
+  });
+  requestAnimationFrame(()=>{jprofDraw();jbatDraw()});
+}
+function jdraw(){
+  if(!jmap||!jmap.getSource('routes'))return;
+  jmk.forEach(m=>m.remove());jmk=[];
+  jmap.getSource('routes').setData({type:'FeatureCollection',features:routes.map((r,i)=>({type:'Feature',properties:{sel:i===jsel?1:0},geometry:{type:'LineString',coordinates:r.pts.map(p=>[p[1],p[0]])}}))});
+  const r=routes[jsel];if(!r)return;
+  [[r.pts[0],'#6fd3b0'],[r.pts[r.pts.length-1],'#ff7b72']].forEach(([p,c])=>{
+    const d=document.createElement('div');d.style.cssText='width:14px;height:14px;border-radius:50%;border:2px solid #fff;background:'+c;
+    jmk.push(new maplibregl.Marker({element:d}).setLngLat([p[1],p[0]]).addTo(jmap));
+  });
+  const bb=new maplibregl.LngLatBounds();r.pts.forEach(p=>bb.extend([p[1],p[0]]));jmap.fitBounds(bb,{padding:30,duration:0});
+}
+
+
+/* ---------- wind on the map: coloured field plus flowing particles ---------- */
+let wg=null,wgU=null,wgV=null,wMax=0,wOn=true,wRaf=0,wParts=[],wCan=null,wCol=null,wTog=null,wLeg=null;
+let wS={cell:12,cols:0,rows:0,U:null,V:null,W:0,H:0},wLast=0;
+const WSTOPS=[[0,70,100,190],[3,60,160,200],[6,70,190,120],[9,200,210,70],[12,240,150,50],[16,230,70,60],[22,190,60,180]];
+function wcol(v){
+  for(let i=1;i<WSTOPS.length;i++){const a=WSTOPS[i-1],b=WSTOPS[i];if(v<=b[0]){const t=Math.max(0,(v-a[0])/(b[0]-a[0]));return[a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t,a[3]+(b[3]-a[3])*t]}}
+  const l=WSTOPS[WSTOPS.length-1];return[l[1],l[2],l[3]];
+}
+/* a grid of forecast points that covers the routes, so the whole map has wind, not just the roads */
+async function fetchWindGrid(){
+  let la0=90,la1=-90,lo0=180,lo1=-180;
+  routes.forEach(r=>r.pts.forEach(p=>{la0=Math.min(la0,p[0]);la1=Math.max(la1,p[0]);lo0=Math.min(lo0,p[1]);lo1=Math.max(lo1,p[1])}));
+  const pl=(la1-la0)*0.2+0.04,po=(lo1-lo0)*0.2+0.06;la0-=pl;la1+=pl;lo0-=po;lo1+=po;
+  const latKm=(la1-la0)*111,lonKm=(lo1-lo0)*111*Math.cos((la0+la1)/2*Math.PI/180),sp=Math.max(4,Math.max(latKm,lonKm)/11);
+  const ny=Math.max(2,Math.min(12,Math.ceil(latKm/sp)+1)),nx=Math.max(2,Math.min(12,Math.ceil(lonKm/sp)+1));
+  const dlat=(la1-la0)/(ny-1),dlon=(lo1-lo0)/(nx-1),pts=[];
+  for(let j=0;j<ny;j++)for(let i=0;i<nx;i++)pts.push([la0+j*dlat,lo0+i*dlon]);
+  const w=wxWindow(),nodes=await wxPoints(pts,w.t0,w.t1);
+  return{la0,lo0,dlat,dlon,nx,ny,nodes};
+}
+function windAtTime(){
+  if(!wg){wgU=null;return}
+  const t=Date.parse($('jl').value)||Date.now();
+  wgU=new Float32Array(wg.nodes.length);wgV=new Float32Array(wg.nodes.length);wMax=0;
+  wg.nodes.forEach((a,i)=>{wgU[i]=-lerpAt(a,a.fx,t);wgV[i]=-lerpAt(a,a.fy,t);wMax=Math.max(wMax,Math.hypot(wgU[i],wgV[i]))});  // air moves towards, forecasts say where it comes from
+}
+function wgSample(lat,lon){
+  const fi=Math.max(0,Math.min(wg.nx-1.001,(lon-wg.lo0)/wg.dlon)),fj=Math.max(0,Math.min(wg.ny-1.001,(lat-wg.la0)/wg.dlat));
+  const i=Math.floor(fi),j=Math.floor(fj),a=fi-i,b=fj-j,k=j*wg.nx+i,n=wg.nx;
+  const f=A=>A[k]*(1-a)*(1-b)+A[k+1]*a*(1-b)+A[k+n]*(1-a)*b+A[k+n+1]*a*b;
+  return[f(wgU),f(wgV)];
+}
+function windInit(){
+  if(wCan||!jmap)return;
+  const c=jmap.getCanvasContainer(),box=jmap.getContainer();
+  wCol=document.createElement('canvas');wCan=document.createElement('canvas');
+  [wCol,wCan].forEach(x=>{x.style.cssText='position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none';c.appendChild(x)});
+  wTog=document.createElement('button');wTog.textContent='Wind: on';
+  wTog.style.cssText='position:absolute;top:8px;left:8px;z-index:3;padding:5px 10px;font-size:13px';
+  wTog.onclick=()=>{wOn=!wOn;wTog.textContent='Wind: '+(wOn?'on':'off');windRebuild()};
+  wLeg=document.createElement('div');
+  wLeg.style.cssText='position:absolute;left:8px;bottom:22px;z-index:3;padding:4px 8px;border-radius:6px;font-size:12px;background:var(--pan);color:var(--tx);border:1px solid var(--line)';
+  box.appendChild(wTog);box.appendChild(wLeg);
+  jmap.on('movestart',()=>{if(wCan){wCan.getContext('2d').clearRect(0,0,wCan.width,wCan.height)}wS.U=null});
+  jmap.on('moveend',windRebuild);jmap.on('resize',windRebuild);
+}
+function windRebuild(){
+  if(!jmap||!wCan)return;
+  cancelAnimationFrame(wRaf);wRaf=0;
+  const vis=wg&&wOn;wCol.style.display=wCan.style.display=vis?'block':'none';wLeg.style.display=wg?'block':'none';wTog.style.display=wg?'block':'none';
+  if(!wg)return;
+  windAtTime();
+  const box=jmap.getContainer(),W=box.clientWidth,H=box.clientHeight,cell=wS.cell,cols=Math.ceil(W/cell)+1,rows=Math.ceil(H/cell)+1;
+  if(!W||!H)return;
+  const U=new Float32Array(cols*rows),V=new Float32Array(cols*rows),img=new ImageData(cols,rows);
+  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+    const ll=jmap.unproject([c*cell,r*cell]),s=wgSample(ll.lat,ll.lng),k=r*cols+c;
+    U[k]=s[0];V[k]=s[1];const col=wcol(Math.hypot(s[0],s[1]));
+    img.data[k*4]=col[0];img.data[k*4+1]=col[1];img.data[k*4+2]=col[2];img.data[k*4+3]=45;
+  }
+  wS={cell,cols,rows,U,V,W,H};
+  const dpr=Math.min(devicePixelRatio||1,2);
+  wCol.width=wCan.width=W*dpr;wCol.height=wCan.height=H*dpr;
+  const off=document.createElement('canvas');off.width=cols;off.height=rows;off.getContext('2d').putImageData(img,0,0);
+  const cx=wCol.getContext('2d');cx.imageSmoothingEnabled=true;cx.drawImage(off,0,0,cols*cell*dpr,rows*cell*dpr);
+  wCan.getContext('2d').setTransform(dpr,0,0,dpr,0,0);
+  const mph=unit==='mi',cv=mph?2.237:3.6,u=mph?'mph':'km/h',d=new Date(Date.parse($('jl').value)||Date.now());
+  wLeg.innerHTML='Wind '+d.toTimeString().slice(0,5)+' · up to '+Math.round(wMax*cv)+' '+u+'<div style="height:6px;margin-top:3px;border-radius:3px;background:linear-gradient(90deg,'+WSTOPS.map(s=>'rgb('+s[1]+','+s[2]+','+s[3]+')').join(',')+')"></div><div style="display:flex;justify-content:space-between"><span>0</span><span>'+Math.round(22*cv)+'</span></div>';
+  if(matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  const N=Math.min(1100,Math.round(W*H/1000));wParts=[];
+  for(let i=0;i<N;i++)wParts.push(wSpawn({}));
+  wRaf=requestAnimationFrame(wLoop);
+}
+function wSpawn(p){p.x=Math.random()*wS.W;p.y=Math.random()*wS.H;p.age=0;p.max=50+Math.random()*90;return p}
+function wField(x,y){
+  const s=wS,fx=Math.max(0,Math.min(s.cols-1.001,x/s.cell)),fy=Math.max(0,Math.min(s.rows-1.001,y/s.cell)),i=Math.floor(fx),j=Math.floor(fy),a=fx-i,b=fy-j,k=j*s.cols+i,n=s.cols;
+  const f=A=>A[k]*(1-a)*(1-b)+A[k+1]*a*(1-b)+A[k+n]*(1-a)*b+A[k+n+1]*a*b;
+  return[f(s.U),f(s.V)];
+}
+function wLoop(t){
+  wRaf=0;
+  if(!wOn||!wg||!wS.U||document.hidden||!$('jr').classList.contains('show'))return;
+  wRaf=requestAnimationFrame(wLoop);
+  if(t-wLast<30)return;wLast=t;
+  const x=wCan.getContext('2d'),K=0.28;
+  x.globalCompositeOperation='destination-out';x.fillStyle='rgba(0,0,0,0.1)';x.fillRect(0,0,wS.W,wS.H);
+  x.globalCompositeOperation='source-over';x.lineWidth=1.4;x.lineCap='round';
+  x.strokeStyle=curTheme()==='light'?'rgba(15,35,70,.6)':'rgba(255,255,255,.62)';
+  x.beginPath();
+  for(const p of wParts){
+    const f=wField(p.x,p.y),nx=p.x+f[0]*K,ny=p.y-f[1]*K;
+    x.moveTo(p.x,p.y);x.lineTo(nx,ny);p.x=nx;p.y=ny;
+    if(++p.age>p.max||nx<0||ny<0||nx>wS.W||ny>wS.H)wSpawn(p);
+  }
+  x.stroke();
+}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)windRebuild()});
+
+/* ---------- elevation profile under the map ---------- */
+let hf=null;
+const cvp=$('jprof');
+let jcm=null;
+function jcurSet(p){
+  if(!jmap||typeof maplibregl==='undefined'||!p)return;
+  if(!jcm){const d=document.createElement('div');d.style.cssText='width:18px;height:18px;border-radius:50%;background:#7fb8ff;border:3px solid #fff;box-shadow:0 0 0 2px rgba(0,0,0,.45)';jcm=new maplibregl.Marker({element:d})}
+  jcm.setLngLat([p[1],p[0]]).addTo(jmap);
+}
+function jcurClear(){if(jcm)jcm.remove()}
+function jprofDraw(){
+  const r=routes[jsel];
+  if(!r||!r.hasElev||!r.el||r.el.length<2){cvp.style.display='none';return}
+  cvp.style.display='block';
+  const b=cvp.getBoundingClientRect(),dpr=devicePixelRatio||1;if(!b.width)return;
+  cvp.width=b.width*dpr;cvp.height=b.height*dpr;const x=cvp.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);
+  const W=b.width,H=b.height,Lm=40,R=12,top=10,bot=20,pw=W-Lm-R,ph=H-top-bot,f=KF(),n=r.el.length,sp=r.km/(n-1);
+  const emn=Math.min(...r.el),emx=Math.max(...r.el),span=Math.max(emx-emn,20),lo=emn-span*0.08,hi=emx+span*0.08;
+  const xs=i=>Lm+i/(n-1)*pw,ys=e=>top+ph-(e-lo)/(hi-lo)*ph;
+  x.font='12px system-ui,sans-serif';x.fillStyle=css('--mut');x.strokeStyle=css('--line');x.lineWidth=1;
+  x.textAlign='left';x.fillText('Elevation',Lm+6,top+12);
+  x.textAlign='right';x.fillText(Math.round(emx)+' m',Lm-6,top+8);x.fillText(Math.round(emn)+' m',Lm-6,top+ph);
+  x.setLineDash([3,4]);[emx,emn].forEach(e=>{x.beginPath();x.moveTo(Lm,ys(e));x.lineTo(W-R,ys(e));x.stroke()});x.setLineDash([]);
+  const g=x.createLinearGradient(0,top,0,top+ph);g.addColorStop(0,'rgba(127,184,255,.55)');g.addColorStop(1,'rgba(127,184,255,.05)');
+  x.beginPath();r.el.forEach((e,i)=>{i?x.lineTo(xs(i),ys(e)):x.moveTo(xs(i),ys(e))});
+  x.lineTo(xs(n-1),top+ph);x.lineTo(xs(0),top+ph);x.closePath();x.fillStyle=g;x.fill();
+  x.beginPath();r.el.forEach((e,i)=>{i?x.lineTo(xs(i),ys(e)):x.moveTo(xs(i),ys(e))});
+  x.strokeStyle=css('--tp');x.lineWidth=2;x.lineJoin='round';x.stroke();
+  const total=r.km*f,st=niceStep(total,5);x.fillStyle=css('--mut');x.textAlign='center';
+  for(let d=0;d<=total+1e-9;d+=st)x.fillText(d+(d===0?' '+unit:''),Math.min(Math.max(Lm+d/total*pw,Lm+8),W-R-14),H-5);
+  if(hf!=null){
+    const i=Math.max(0,Math.min(n-1,Math.round(hf*(n-1)))),px=xs(i),py=ys(r.el[i]);
+    x.strokeStyle=css('--tx');x.globalAlpha=.35;x.beginPath();x.moveTo(px,top);x.lineTo(px,top+ph);x.stroke();x.globalAlpha=1;
+    x.beginPath();x.fillStyle=css('--tp');x.arc(px,py,4.5,0,7);x.fill();
+    const t=Math.round(r.el[i])+' m at '+(i*sp*f).toFixed(1)+' '+unit;x.font='600 12px system-ui,sans-serif';
+    const w=x.measureText(t).width+14,bx=Math.min(Math.max(px-w/2,Lm),W-R-w);
+    x.fillStyle=css('--bg');x.fillRect(bx,top-2,w,20);x.strokeStyle=css('--line');x.strokeRect(bx,top-2,w,20);
+    x.fillStyle=css('--tx');x.textAlign='left';x.fillText(t,bx+7,top+12);
+  }
+}
+const cvb=$('jbat');
+function jhov(e,cv){
+  const b=cv.getBoundingClientRect();hf=Math.max(0,Math.min(1,(e.clientX-b.left-40)/(b.width-52)));
+  jprofDraw();jbatDraw();const r=routes[jsel];if(r)jcurSet(r.samples[Math.round(hf*(r.samples.length-1))]);
+}
+function jhovEnd(){hf=null;jprofDraw();jbatDraw();jcurClear()}
+[cvp,cvb].forEach(c=>{c.addEventListener('pointermove',e=>jhov(e,c));c.addEventListener('pointerleave',jhovEnd)});
+function jbatArr(r){
+  const n=r.samples.length,sp=r.km/(n-1),P=jpar,out=[];
+  let U=0,D=0,ref=r.el?r.el[0]:null;
+  for(let i=0;i<n;i++){
+    if(r.el){const e=r.el[i],d=e-ref;if(d>=5){U+=d;ref=e}else if(d<=-5){D-=d;ref=e}}
+    out.push(P.start-(r.cum[i]+P.cu*U-P.cd*D)/64*100);
+  }
+  return out;
+}
+function jbatDraw(){
+  const r=routes[jsel];
+  if(!r||!jpar||!r.samples||r.samples.length<2){cvb.style.display='none';return}
+  cvb.style.display='block';
+  const bb=cvb.getBoundingClientRect(),dpr=devicePixelRatio||1;if(!bb.width)return;
+  cvb.width=bb.width*dpr;cvb.height=bb.height*dpr;const x=cvb.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);
+  const bat=jbatArr(r),n=bat.length,W=bb.width,H=bb.height,Lm=40,R=12,top=10,bot=20,pw=W-Lm-R,ph=H-top-bot,f=KF(),sp=r.km/(n-1);
+  let lo=Math.max(0,Math.floor((Math.min(...bat)-1)/5)*5),hi=Math.min(100,Math.ceil((Math.max(...bat)+1)/5)*5);
+  if(hi-lo<10){if(lo+10<=100)hi=lo+10;else lo=hi-10}
+  const ty=hi-lo>40?10:5,xs=i=>Lm+i/(n-1)*pw,ys=v=>top+ph-(v-lo)/(hi-lo)*ph,org='#f2a14a';
+  x.font='12px system-ui,sans-serif';x.lineWidth=1;x.strokeStyle=css('--line');x.fillStyle=css('--mut');x.textAlign='right';x.setLineDash([3,4]);
+  for(let v=lo;v<=hi;v+=ty){x.beginPath();x.moveTo(Lm,ys(v));x.lineTo(W-R,ys(v));x.stroke();x.fillText(v+'%',Lm-6,ys(v)+4)}
+  if(lo<10&&hi>10){x.strokeStyle=css('--bad');x.beginPath();x.moveTo(Lm,ys(10));x.lineTo(W-R,ys(10));x.stroke()}
+  x.setLineDash([]);x.textAlign='left';x.fillStyle=css('--mut');x.fillText('Battery',Lm+6,top+12);
+  const g=x.createLinearGradient(0,top,0,top+ph);g.addColorStop(0,'rgba(242,161,74,.5)');g.addColorStop(1,'rgba(242,161,74,.04)');
+  x.beginPath();bat.forEach((v,i)=>{i?x.lineTo(xs(i),ys(v)):x.moveTo(xs(i),ys(v))});
+  x.lineTo(xs(n-1),top+ph);x.lineTo(xs(0),top+ph);x.closePath();x.fillStyle=g;x.fill();
+  x.beginPath();bat.forEach((v,i)=>{i?x.lineTo(xs(i),ys(v)):x.moveTo(xs(i),ys(v))});
+  x.strokeStyle=org;x.lineWidth=2.5;x.lineJoin='round';x.stroke();
+  const total=r.km*f,st=niceStep(total,5);x.fillStyle=css('--mut');x.textAlign='center';
+  for(let d=0;d<=total+1e-9;d+=st)x.fillText(d+(d===0?' '+unit:''),Math.min(Math.max(Lm+d/total*pw,Lm+8),W-R-14),H-5);
+  const i=hf!=null?Math.max(0,Math.min(n-1,Math.round(hf*(n-1)))):n-1,px=xs(i),py=ys(bat[i]);
+  if(hf!=null){x.strokeStyle=css('--tx');x.globalAlpha=.35;x.beginPath();x.moveTo(px,top);x.lineTo(px,top+ph);x.stroke();x.globalAlpha=1}
+  x.beginPath();x.fillStyle=org;x.arc(px,py,5,0,7);x.fill();
+  if(hf!=null){let t=bat[i].toFixed(1)+'% at '+(i*sp*f).toFixed(1)+' '+unit;if(r.T&&r.T[i]!=null){t+=' · '+Math.round(r.T[i])+' °C';const w=r.WH[i]*(unit==='mi'?2.237:3.6);if(Math.abs(w)>=1)t+=' · '+Math.round(Math.abs(w))+(w>0?' head':' tail')+'wind'}x.font='600 12px system-ui,sans-serif';
+    const w=x.measureText(t).width+14,bx=Math.min(Math.max(px-w/2,Lm),W-R-w);
+    x.fillStyle=css('--bg');x.fillRect(bx,top-2,w,20);x.strokeStyle=css('--line');x.strokeRect(bx,top-2,w,20);
+    x.fillStyle=css('--tx');x.textAlign='left';x.fillText(t,bx+7,top+12)}
+}
+addEventListener('resize',jbatDraw);
+addEventListener('resize',jprofDraw);
+
+async function findRoutes(){
+  const msg=$('jmsg');
+  if(!$('jt').value.trim()){msg.textContent='Enter a destination postcode or address.';return}
+  msg.textContent='Finding routes…';$('jsug').innerHTML='';$('jgo').disabled=true;
+  try{
+    const to=await place('jt');
+    const from=$('jf').value.trim()?await place('jf'):await myLoc();
+    await ensureMap();
+    const u='https://router.project-osrm.org/route/v1/driving/'+from[1]+','+from[0]+';'+to[1]+','+to[0]+'?alternatives=3&overview=full&geometries=geojson&annotations=speed';
+    const j=await (await fetch(u)).json();
+    if(j.code!=='Ok'||!j.routes.length)throw new Error('No driving route found between those postcodes.');
+    routes=j.routes.map(r=>({km:r.distance/1000,min:r.duration/60,pts:r.geometry.coordinates.map(c=>[c[1],c[0]]),ann:r.legs&&r.legs.length===1?r.legs[0].annotation:null}));
+    msg.textContent='Looking up elevation…';
+    routes.forEach(sampleRoute);
+    msg.textContent='Checking the weather…';
+    try{wx=await fetchWx();wxErr=''}catch(e){wx=null;wxErr=e.message}
+    try{wg=await fetchWindGrid()}catch(e){wg=null}
+    onElevWait=sec=>{$('jmsg').textContent='Waiting for the free elevation service limit… about '+sec+' s'};
+    try{await ensureElev(routes.flatMap(r=>r.samples),(d,t)=>{$('jmsg').textContent=t?'Looking up elevation… '+Math.round(d/t*100)+'% ('+t+' new points)':'Using saved elevation data…'})}
+    catch(e){routes.forEach(r=>{r.err=e.message})}
+    onElevWait=null;routes.forEach(fillRoute);
+    jsel=0;jrender();jmap.resize();jdraw();windInit();windRebuild();
+    msg.textContent=routes.length+' route'+(routes.length>1?'s':'')+'. Speeds are estimated from road data scaled to your cruise speed, without traffic. Battery figures are rough estimates.'+(routes.some(r=>!r.hasElev)?' Elevation failed for some routes, see the cards.':'')+(wx?' Weather checked at '+Object.keys(wx.cells).length+' points about '+(2*wx.g)+' km apart.':' Weather unavailable ('+wxErr+'), so no temperature or wind adjustment is included.');
+  }catch(e){msg.textContent=e.message}
+  $('jgo').disabled=false;
+}
+let wxTm=null;
+$('jl').addEventListener('input',()=>{
+  clearTimeout(wxTm);
+  wxTm=setTimeout(async()=>{
+    if(!routes.length||!routes[0].samples)return;
+    $('jmsg').textContent='Updating the forecast for that time…';
+    try{wx=await fetchWx();wxErr=''}catch(e){wx=null;wxErr=e.message}
+    try{wg=await fetchWindGrid()}catch(e){wg=null}
+    $('jmsg').textContent=wx?'Forecast updated for that departure time.':'Weather unavailable ('+wxErr+').';
+    jrender();jdraw();windRebuild();
+  },900);
+});
+$('jgo').onclick=findRoutes;
+$('jt').addEventListener('keydown',e=>{if(e.key==='Enter')findRoutes()});
+$('tJr').onclick=()=>show('jr');
+
+
+
+
+/* ---------- ask for location ---------- */
+function locBar(show,msg){$('locbar').style.display=show?'flex':'none';if(msg)$('locmsg').textContent=msg}
+function askLocation(){
+  if(!navigator.geolocation){locBar(true,'This browser has no location support.');$('locbtn').style.display='none';return}
+  navigator.geolocation.getCurrentPosition(p=>{
+    const c=p.coords;gpsInfo.fix={lat:c.latitude,lon:c.longitude,acc:c.accuracy,alt:c.altitude,t:Date.now()};locBar(false);
+  },e=>{
+    if(e.code===1)locBar(true,'Location is blocked for this page. Tap the icon beside the web address, set Location to Allow, then reload.');
+    else locBar(true,'Could not get your location yet ('+(e.code===3?'timed out':'no signal')+'). Try again, ideally outdoors.');
+  },{enableHighAccuracy:true,timeout:20000,maximumAge:0});
+}
+$('locbtn').onclick=askLocation;
+async function locInit(){
+  if(!window.isSecureContext){
+    const how=location.protocol==='file:'?'opened as a local file':location.protocol==='http:'?'on a plain http address':'on an address the browser does not trust';
+    locBar(true,'This page is '+how+', so the browser will not allow location. It must be on https. The easiest fix is to host the file free on GitHub Pages and open that https address.');
+    $('locbtn').style.display='none';return}
+  let st='unknown';
+  try{const p=await navigator.permissions.query({name:'geolocation'});st=p.state;
+    p.onchange=()=>{if(p.state==='granted')locBar(false);else if(p.state==='denied')locBar(true,'Location is blocked for this page. Tap the icon beside the web address, set Location to Allow, then reload.')}}catch(e){}
+  if(st==='granted')return;
+  if(st==='denied'){locBar(true,'Location is blocked for this page. Tap the icon beside the web address, set Location to Allow, then reload.');return}
+  locBar(true,'EV Brain uses your location for routes, elevation and the weather along your drive.');
+  askLocation();
+}
+
+/* ---------- keep the screen on ---------- */
+/* The Wake Lock API only exists on https pages. Elsewhere we play a tiny silent looping video, the NoSleep.js trick (MIT licence). */
+let awake=true;try{awake=localStorage.getItem('evb_awake')!=='0'}catch(e){}
+const NS_WEBM='data:video/webm;base64,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',NS_MP4='data:video/mp4;base64,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';
+let nsVideo=null;
+function nsEnsure(){
+  if(nsVideo)return nsVideo;
+  const v=document.createElement('video');v.setAttribute('title','No Sleep');v.setAttribute('playsinline','');v.loop=true;
+  [['webm',NS_WEBM],['mp4',NS_MP4]].forEach(p=>{const so=document.createElement('source');so.src=p[1];so.type='video/'+p[0];v.appendChild(so)});
+  nsVideo=v;return v;
+}
+async function nsPlay(){
+  const v=nsEnsure();
+  if(v.paused){try{await v.play()}catch(e){log('Screen stay-on video needs a tap: '+e.message)}}
+  wakeLabel();
+}
+async function wakeAcquire(){
+  if(!awake||document.hidden)return;
+  if(navigator.wakeLock){
+    if(wake)return;
+    try{wake=await navigator.wakeLock.request('screen');wake.addEventListener('release',()=>{wake=null})}
+    catch(e){log('Wake lock refused ('+e.message+'), using the video method');nsPlay()}
+  }else nsPlay();
+}
+function wakeRelease(){
+  try{if(wake){wake.release();wake=null}}catch(e){}
+  try{if(nsVideo&&!nsVideo.paused)nsVideo.pause()}catch(e){}
+}
+function wakeLabel(){
+  const m=navigator.wakeLock?'':(nsVideo&&!nsVideo.paused?' (video method)':' (tap the screen once)');
+  $('bw').textContent='Screen: '+(awake?'stay on'+m:'normal');
+}
+$('bw').onclick=()=>{awake=!awake;try{localStorage.setItem('evb_awake',awake?'1':'0')}catch(e){}if(awake)wakeAcquire();else wakeRelease();wakeLabel()};
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')wakeAcquire()});
+['pointerdown','keydown','click','touchend'].forEach(e=>addEventListener(e,wakeAcquire,{passive:true}));
+wakeLabel();wakeAcquire();locInit();
+
+/* ---------- theme ---------- */
+function setTheme(t,save){
+  document.documentElement.dataset.theme=t;$('bth').textContent='Theme: '+t;
+  if(save){try{localStorage.setItem('evb_theme',t)}catch(e){}}
+  if(jmap)jmap.setStyle(mapStyle());
+  draw();draw2();jprofDraw();jbatDraw();
+}
+$('bth').onclick=()=>setTheme(curTheme()==='light'?'dark':'light',true);
+
+/* ---------- settings ---------- */
+$('bs').onclick=()=>{const o=$('set').classList.toggle('open');$('bs').setAttribute('aria-expanded',o);setTimeout(draw,0)};
+
+/* ---------- full screen ---------- */
+const root=document.documentElement;
+$('bfs').onclick=()=>{
+  const el=document.fullscreenElement||document.webkitFullscreenElement;
+  if(el){(document.exitFullscreen||document.webkitExitFullscreen).call(document)}
+  else{const f=root.requestFullscreen||root.webkitRequestFullscreen;
+    if(f)f.call(root);else status('This browser does not support full screen. Try Chrome.')}
+};
+['fullscreenchange','webkitfullscreenchange'].forEach(e=>document.addEventListener(e,()=>{
+  const on=!!(document.fullscreenElement||document.webkitFullscreenElement);
+  $('fsi').innerHTML=on?'<path d="M3 8h5V3M21 8h-5V3M3 16h5v5M21 16h-5v5"/>':'<path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/>';$('bfs').title=on?'Exit full screen':'Full screen';
+  document.body.classList.toggle('fs',on);setTimeout(draw,100);
+}));
+
+/* ---------- demo ---------- */
+function stopDemo(){if(demo){clearInterval(demo);demo=null;$('bd').textContent='Demo drive'}}
+$('bd').onclick=()=>{
+  if(demo){stopDemo();return}
+  rows=[];t0=0;distKm=0;kwh=0;trk=[];lastDemoD=0;let soc=78,t=0;$('bd').textContent='Stop demo';status('Demo data, no car connected.');
+  demo=setInterval(()=>{
+    t+=1;const spd=Math.max(0,55+30*Math.sin(t/25)+10*Math.sin(t/7));
+    const kw=Math.max(-40,Math.min(60,(spd-50)*1.1+25*Math.cos(t/9)+10));
+    soc-=Math.max(kw,0)/3600*.9*100/64*1;soc+=Math.max(-kw,0)/3600*.6*100/64;
+    addSample(soc,kw,12+Math.sin(t/60)*.8,spd);
+    if(distKm-lastDemoD>=0.05){lastDemoD=distKm;trk.push({lat:51.5,lon:-0.1+distKm*0.01,d:distKm,elev:60+35*Math.sin(distKm*0.9)+12*Math.sin(distKm*3.1)})}
+  },300);
+};
+let savedTheme=null;try{savedTheme=localStorage.getItem('evb_theme')}catch(e){}
+setTheme(savedTheme||(matchMedia&&matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'),false);
+fitCal();draw();
+</script>
+</body>
+</html>
