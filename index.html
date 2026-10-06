@@ -6,9 +6,9 @@
 <title>EV Brain</title>
 <style>
 :root{color-scheme:dark;--bg:#11181c;--pan:#172228;--line:#2a3a42;--tx:#e6edf0;--mut:#8aa0aa;
---soc:#6fd3b0;--pw:#f2b04a;--tp:#7fb8ff;--ds:#b79cf0;--onp:#0b1a14;--warn:#f2b04a;--bad:#ff7b72}
+--soc:#6fd3b0;--pw:#f2b04a;--tp:#7fb8ff;--ds:#b79cf0;--onp:#0b1a14;--warn:#f2b04a;--bad:#ff7b72;--kd:#ff9f43;--kh:#ff6b6b;--ko:#a29bfe}
 :root[data-theme="light"]{color-scheme:light;--bg:#f2f5f6;--pan:#ffffff;--line:#d3dce1;--tx:#13202a;--mut:#566b78;
---soc:#188a68;--pw:#b9740e;--tp:#2272c7;--ds:#6d4fb8;--onp:#ffffff;--warn:#b9740e;--bad:#cf3a33}
+--soc:#188a68;--pw:#b9740e;--tp:#2272c7;--ds:#6d4fb8;--onp:#ffffff;--warn:#b9740e;--bad:#cf3a33;--kd:#d9730d;--kh:#cf3a33;--ko:#6d5fd0}
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
 body{background:var(--bg);color:var(--tx);font:15px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;display:flex;flex-direction:column}
@@ -55,9 +55,9 @@ body.sub #bb{display:grid}
 #hd2{padding:12px 16px 0}
 #big2{font-size:34px;font-weight:650;line-height:1.15}
 #sub2{color:var(--mut);font-size:14px;min-height:20px}
-#stats2{display:flex;flex-wrap:wrap;gap:8px;padding:10px 12px 0}
-#stats2 div{flex:1 1 84px;background:var(--pan);border:1px solid var(--line);border-radius:10px;padding:8px 12px}
-#stats2 small{display:block;color:var(--mut);font-size:12px}
+#stats2,#stats3{display:flex;flex-wrap:wrap;gap:8px;padding:10px 12px 0}
+#stats2 div,#stats3 div{flex:1 1 84px;background:var(--pan);border:1px solid var(--line);border-radius:10px;padding:8px 12px}
+#stats2 small,#stats3 small{display:block;color:var(--mut);font-size:12px}
 #stats2 b{font-size:18px;color:#f2a14a;font-weight:650}
 #jr{display:none;flex:1;min-height:0;flex-direction:column;overflow-y:auto}
 #jr.show{display:flex}
@@ -73,12 +73,28 @@ body.sub #bb{display:grid}
 #jmap{height:34vh;min-height:160px;flex:none;margin:0 24px;border-radius:10px;border:1px solid var(--line);background:var(--pan)}
 #jprof,#jbat{display:none;height:208px;touch-action:pan-y;width:calc(100% - 48px);margin:8px 24px 0;border-radius:10px;border:1px solid var(--line);background:var(--pan);flex:none}
 #jres{flex:none;padding:10px 24px 70px;display:grid;gap:8px;align-content:start}
-.rt{text-align:left;padding:12px 14px;border-radius:10px;background:var(--pan);border:1px solid var(--line);display:block;width:100%}
+.rt{cursor:pointer;text-align:left;padding:12px 14px;border-radius:10px;background:var(--pan);border:1px solid var(--line);display:block;width:100%}
 .rt.sel{border-color:#f2a14a}
 .rt b{font-size:18px}.rt small{display:block;color:var(--mut);font-size:13px;margin-top:2px}
 .rt .tag{color:var(--soc);font-size:12px;margin-left:6px}
 .rt .arr{font-size:16px;font-weight:650;margin-top:6px}
 #locbar{display:none;grid-column:1/-1;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 14px;border:1px solid var(--warn);border-radius:10px;background:var(--pan);font-size:14px}
+#hist{display:none;flex:1;min-height:0;flex-direction:column;overflow-y:auto}
+#hist.show{display:flex}
+#hbar{padding:10px 24px 0}
+#hmsg{padding:0 24px 6px;color:var(--mut);font-size:13px;min-height:20px}
+#hlist{display:grid;gap:10px;padding:4px 24px 80px}
+.hc{background:var(--pan);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.hc b{font-size:16px}.hc small{display:block;color:var(--mut);font-size:13px;margin-top:2px}
+.hc canvas{width:100%;height:46px;display:block;margin:8px 0}
+.hc .pc{font-size:13px;margin-top:4px}
+.hc .acts{display:flex;gap:8px;margin-top:6px}
+.hc .acts button{padding:5px 10px;font-size:13px}
+.rt .tk{margin-top:8px;padding:4px 10px;font-size:13px}
+#stats3 .kd b{color:var(--kd)}#stats3 .kh b{color:var(--kh)}#stats3 .ko b{color:var(--ko)}
+#stats3 b{font-size:16px}
+#splitnote{padding:4px 14px 0;color:var(--mut);font-size:12px}
+.sbar{display:flex;height:6px;border-radius:3px;overflow:hidden;margin:4px 0;background:var(--line)}.sbar i{display:block;height:100%}
 </style>
 </head>
 <body>
@@ -99,6 +115,7 @@ body.sub #bb{display:grid}
     <button id="bth">Theme: dark</button>
     <button id="bw">Screen: stay on</button>
   </div>
+  <div id="lgst" style="margin:0 0 6px">Trip log: waiting for car data. Trips are saved on this phone only.</div>
   <div id="gst" style="margin:0 0 6px">GPS: not started</div>
   <div id="du" style="margin:-2px 0 10px">Elevation data used: 0 KB</div>
   <div id="calst" style="margin:0 0 10px"></div>
@@ -125,8 +142,19 @@ body.sub #bb{display:grid}
   <div id="locbar"><span id="locmsg"></span><button class="p" id="locbtn">Allow location</button></div>
   <button class="tile" id="tTrip"><strong>Trip detail<small>State of charge, power, temperature, distance</small></strong><span id="tl">No data yet</span></button>
   <button class="tile" id="tTrip2"><strong>Trip<small>Battery used over distance</small></strong><span id="tl2">No data yet</span></button>
+  <button class="tile" id="tHist"><strong>Trips<small>Every drive, saved on this phone only</small></strong><span id="tl3">No trips yet</span></button>
   <button class="tile" id="tJr"><strong>Plan a journey<small>Postcode to route options and battery on arrival</small></strong><span>Routes</span></button>
 </div>
+<section id="hist">
+  <div id="hbar" class="row">
+    <button id="hex">Export all (JSON)</button>
+    <button id="him">Import backup</button>
+    <button id="hkeep">Keep storage safe</button>
+    <input type="file" id="hfile" accept=".json,application/json" hidden>
+  </div>
+  <div id="hmsg"></div>
+  <div id="hlist"></div>
+</section>
 <section id="jr">
   <div id="jin">
     <input id="jf" class="w" placeholder="From: postcode or address (blank = my location)" autocomplete="off">
@@ -149,6 +177,8 @@ body.sub #bb{display:grid}
 <section id="tr2">
   <div id="hd2"><div id="big2">No trip data yet</div><div id="sub2"></div></div>
   <div id="stats2"><div><small>Started</small><b id="s0">–</b></div><div><small>Now</small><b id="s1">–</b></div><div><small>Distance</small><b id="s2">–</b></div><div><small>Climb</small><b id="s3">–</b></div><div><small>Descent</small><b id="s4">–</b></div></div>
+  <div id="stats3"><div class="kd"><small>Drivetrain</small><b id="sd">–</b></div><div class="kh"><small>Heating and cooling</small><b id="sh">–</b></div><div class="ko"><small>Other</small><b id="so">–</b></div></div>
+  <div id="splitnote">Estimated split. The car reports only total battery power, so heating and other are measured while you are stopped with the car on, and the rest is drivetrain.</div>
   <main><canvas id="cv2"></canvas></main>
 </section>
 <section id="trip"><main><canvas id="cv"></canvas></main></section>
@@ -162,23 +192,26 @@ const P=[
  {k:'soc',n:'State of charge',u:'%',c:'--soc',d:1,min:0,max:100},
  {k:'kw',n:'Power',u:'kW',c:'--pw',d:1},
  {k:'tmp',n:'Outside temp',u:'°C',c:'--tp',d:1},
- {k:'km',n:'Distance',u:'km',c:'--ds',d:2,min:0}
+ {k:'km',n:'Distance',u:'km',c:'--ds',d:2,min:0},
+ {k:'kd',n:'Drivetrain',u:'kW',c:'--kd',d:1},
+ {k:'kh',n:'Heating',u:'kW',c:'--kh',d:2},
+ {k:'ko',n:'Other',u:'kW',c:'--ko',d:2}
 ];
 const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 function log(s){const l=$('log');l.textContent=(s+'\n'+l.textContent).slice(0,3000)}
 function status(s){$('st').textContent=s}
 
 /* ---------- drawing ---------- */
-const on={soc:true,kw:true,tmp:true,km:true};
+const on={soc:true,kw:true,tmp:true,km:true,kd:false,kh:false,ko:false};
 let unit='mi';
 const KF=()=>unit==='mi'?0.621371:1;
-const gv=(o,k)=>k==='km'&&o[k]!=null?o[k]*KF():o[k];
+const gv=(o,k)=>k==='km'&&o[k]!=null?o[k]*KF():(k==='kd'?o.d:k==='kh'?o.h:k==='ko'?o.o:o[k]);
 const chips={};
 const chipBar=document.createElement('div');chipBar.id='chips';
 $('cv').parentElement.before(chipBar);
 P.forEach(p=>{
-  const b=document.createElement('button');b.className='chip on';b.style.setProperty('--c',`var(${p.c})`);
-  b.setAttribute('aria-pressed','true');
+  const b=document.createElement('button');b.className='chip'+(on[p.k]?' on':'');b.style.setProperty('--c',`var(${p.c})`);
+  b.setAttribute('aria-pressed',String(!!on[p.k]));
   b.innerHTML='<i></i><span>'+p.n+'</span><b>–</b>';
   b.onclick=()=>{on[p.k]=!on[p.k];b.classList.toggle('on',on[p.k]);b.setAttribute('aria-pressed',on[p.k]);draw()};
   chipBar.appendChild(b);chips[p.k]=b.querySelector('b');
@@ -260,6 +293,8 @@ function draw2(){
     x.strokeStyle='rgba(127,184,255,.8)';x.lineWidth=1.5;x.setLineDash([]);x.stroke();
     x.fillStyle=css('--tp');x.textAlign='right';x.font='12px system-ui,sans-serif';x.fillText('Elevation '+Math.round(emn)+' to '+Math.round(emx)+' m',W-R-6,top+ph-6);
   }
+  const S3=sumSplit(rows),T3=S3.d+S3.h+S3.o;
+  [['sd',S3.d],['sh',S3.h],['so',S3.o]].forEach(a=>{$(a[0]).textContent=rows.length>1&&T3>0.01?a[1].toFixed(1)+' kWh · '+Math.round(a[1]/T3*100)+'%':'–'});
   const [cu,cd]=climb();$('s3').textContent=tp.length>1?'+'+Math.round(cu)+' m':'–';$('s4').textContent=tp.length>1?'−'+Math.round(cd)+' m':'–';
   const org='#f2a14a',pxy=o=>[xs(o.km*f),ys(o.soc)];
   const g=x.createLinearGradient(0,top,0,top+ph);g.addColorStop(0,'rgba(242,161,74,.5)');g.addColorStop(1,'rgba(242,161,74,.04)');
@@ -389,11 +424,21 @@ $('bgt').onclick=()=>{gpsOn=true;$('bg').textContent='Location: on';gpsInfo.err=
 $('bg').onclick=()=>{gpsOn=!gpsOn;$('bg').textContent='Location: '+(gpsOn?'on':'off');if(!gpsOn)stopGps();else if(connected)startGps()};
 
 /* ---------- sample handling ---------- */
-function addSample(soc,kw,tmp,spd){
-  const now=performance.now()/1000;if(!t0){t0=now;lastT=now}
+function addSample(soc,kw,tmp,spd,ex){
+  const now=performance.now()/1000;
+  if(rows.length&&now-lastT>300)logFinish();                    // five minutes of silence: that trip is over
+  if(!t0){t0=now;lastT=now}
   const dt=now-lastT;distKm+=(spd||0)*dt/3600;if(kw!=null)kwh+=kw*dt/3600;lastT=now;
-  rows.push({t:now-t0,soc,kw,tmp,km:distKm,spd,e:kwh});
-  if(!demo&&now-lastSave>60){lastSave=now;saveTrip()}draw();tiles();draw2();
+  if((spd||0)<1){if(!stillSince)stillSince=now}else stillSince=null;
+  const row={t:now-t0,soc,kw,tmp,km:distKm,spd,e:kwh};
+  if(ex){row.v=ex.v;row.i=ex.i==null?null:+ex.i.toFixed(1);if(ex.r)row.r=ex.r;if(ex.rt)row.rt=ex.rt}
+  if(dt>5)row.g=Math.round(dt);
+  const spl=splitStep(kw,spd,tmp,now);if(spl){row.d=+spl[0].toFixed(2);row.h=+spl[1].toFixed(2);row.o=+spl[2].toFixed(2)}                                  // marks a gap in the readings
+  rows.push(row);
+  if(!demo&&now-lastSave>60){lastSave=now;saveTrip()}
+  if(!demo&&now-lastLog>30){lastLog=now;tripSave(false)}
+  if(stillSince&&now-stillSince>900&&rows.length>20)logFinish(); // parked or charging with the car on for 15 minutes
+  draw();tiles();draw2();
   const rs=Math.round(soc);if(rs!==lastJ){lastJ=rs;if($('jr').classList.contains('show')){jsync();if(routes.length)jrender()}}
 }
 let kwh=0;
@@ -407,7 +452,7 @@ function tiles(){
   $('tl').innerHTML=Math.round(l.soc)+'%  ·  '+(l.kw==null?'–':l.kw.toFixed(1))+' kW'+e;
   $('tl2').innerHTML=(u0>=0?u0.toFixed(1)+'% used':(-u0).toFixed(1)+'% gained')+e;
 }
-$('br').onclick=()=>{if(!demo)saveTrip();tripId=null;rows=[];t0=0;distKm=0;kwh=0;trk=[];lastFix=null;bytesUsed=0;updateData();tiles();draw();draw2()};
+$('br').onclick=()=>{logFinish();bytesUsed=0;updateData()};
 $('bx').onclick=()=>{
   const c='time_s,soc_pct,power_kw,outside_c,distance_km,speed_kmh\n'+rows.map(o=>[o.t.toFixed(1),o.soc,o.kw,o.tmp,o.km.toFixed(3),o.spd].join(',')).join('\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([c],{type:'text/csv'}));a.download='eniro-trip.csv';a.click();
@@ -450,7 +495,7 @@ async function connect(){
     }
     if(!nt||!wr)throw new Error('No serial characteristics found');
     await nt.startNotifications();nt.addEventListener('characteristicvaluechanged',onData);
-    dev.addEventListener('gattserverdisconnected',()=>{connected=false;stopGps();saveTrip();status('Disconnected.')});
+    dev.addEventListener('gattserverdisconnected',()=>{connected=false;stopGps();saveTrip();tripSave(false);status('Disconnected.')});
     connected=true;stopDemo();if(gpsOn)startGps();
     for(const c of ['ATZ','ATE0','ATL0','ATS0','ATH0','ATSP6','ATCAF1']){const r=await send(c);log(c+' → '+r.replace(/\s+/g,' '))}
     status('Connected. Turn the car on (Ready) to get data.');
@@ -458,16 +503,17 @@ async function connect(){
   }catch(e){status('Could not connect: '+e.message);log(String(e))}
 }
 let n=0;
+const hx=x=>x.toString(16).padStart(2,'0');let rawN=0;
 async function poll(){
   while(connected){
     await send('ATSH7E4');
     const r1=await send('220101');lastRaw=r1;
     const p=bytes(r1);
-    let soc=null,kw=null;
+    let soc=null,kw=null,vol=null,cur=null,rawT=null;
     if(p.length>20&&p[0]===0x62){
       const iS=+$('iS').value,iI=+$('iI').value,iV=+$('iV').value;
       soc=p[iS]/2;
-      const cur=((p[iI]<<8|p[iI+1])<<16>>16)/10,vol=(p[iV]<<8|p[iV+1])/10;
+      cur=((p[iI]<<8|p[iI+1])<<16>>16)/10;vol=(p[iV]<<8|p[iV+1])/10;
       kw=cur*vol/1000;   // + = discharging, - = regen/charging
       if(n++%15===0)log('2101 bytes: '+p.map(x=>x.toString(16).padStart(2,'0')).join(' '));
     }else if(n++%5===0)log('220101: '+r1.replace(/\s+/g,' '));
@@ -475,11 +521,11 @@ async function poll(){
     const sp=bytes(await send('010D'));if(sp[0]===0x41)speed=sp[2];
     if(n%6===0){
       await send('ATSH'+$('hT').value.trim());
-      const rt=await send('220100');window.lastTemp=rt;const t=bytes(rt),ti=+$('iT').value;
+      const rt=await send('220100');window.lastTemp=rt;const t=bytes(rt),ti=+$('iT').value;rawT=t.map(hx).join('');
       if(t[0]===0x62&&t.length>ti)tempC=t[ti]/2-40;
       if(tempC==null||n%36===0)log('220100 ('+$('hT').value+'): '+(t.length?t.map(x=>x.toString(16).padStart(2,'0')).join(' '):rt.replace(/\s+/g,' ')));
     }
-    if(soc!=null)addSample(soc,kw,tempC,speed);
+    if(soc!=null)addSample(soc,kw,tempC,speed,{v:vol,i:cur,r:(rawN++%5===0)?p.map(hx).join(''):null,rt:rawT});
   }
 }
 $('bc').onclick=()=>{if(!navigator.bluetooth){status('Web Bluetooth is not available here. Use Chrome or Edge on Android or desktop.');return}connect()};
@@ -508,9 +554,10 @@ $('bt').onclick=()=>{
 
 /* ---------- screens ---------- */
 function show(v){
-  $('home').classList.toggle('show',v==='home');$('trip').classList.toggle('show',v==='trip');$('tr2').classList.toggle('show',v==='tr2');$('jr').classList.toggle('show',v==='jr');
+  $('home').classList.toggle('show',v==='home');$('trip').classList.toggle('show',v==='trip');$('tr2').classList.toggle('show',v==='tr2');$('jr').classList.toggle('show',v==='jr');$('hist').classList.toggle('show',v==='hist');
+  if(v==='hist')histRender();
   if(v==='jr'){jprefill();if(routes.length)jrender();if(jmap)setTimeout(()=>{jmap.resize();jdraw();windRebuild()},60)}
-  document.body.classList.toggle('sub',v!=='home');$('ht').textContent={trip:'Trip detail',tr2:'Trip',jr:'Plan a journey',home:'EV Brain'}[v];
+  document.body.classList.toggle('sub',v!=='home');$('ht').textContent={trip:'Trip detail',tr2:'Trip',jr:'Plan a journey',hist:'Trips',home:'EV Brain'}[v];
   requestAnimationFrame(()=>{draw();draw2()});
 }
 $('tTrip2').onclick=()=>show('tr2');
@@ -579,7 +626,196 @@ function calNote(){
   if($('jcal'))$('jcal').textContent=t;
 }
 $('bcc').onclick=()=>{try{localStorage.removeItem(CK)}catch(e){}tripId=null;fitCal()};
-addEventListener('pagehide',()=>{if(!demo)saveTrip()});
+addEventListener('pagehide',()=>{if(!demo){saveTrip();tripSave(false)}});
+
+
+/* ---------- trip log: saved in this phone's browser database, never uploaded ---------- */
+const APPVER='2026.10.4',CH=300,pad5=n=>String(n).padStart(5,'0');
+let LT=null,lastLog=0,stillSince=null,dbp=null,curPlan=null;
+try{curPlan=JSON.parse(localStorage.getItem('evb_plan'))}catch(e){}
+function db(){
+  if(!window.indexedDB)return Promise.reject(new Error('this browser has no database storage'));
+  if(dbp)return dbp;
+  dbp=new Promise((res,rej)=>{const q=indexedDB.open('evbrain',1);
+    q.onupgradeneeded=()=>{const d=q.result;d.createObjectStore('trips',{keyPath:'id'});d.createObjectStore('chunks',{keyPath:'key'});d.createObjectStore('tracks',{keyPath:'id'})};
+    q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)});
+  return dbp;
+}
+const rq=r=>new Promise((res,rej)=>{r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
+function tx(stores,mode,fn){
+  return db().then(d=>new Promise((res,rej)=>{
+    const t=d.transaction(stores,mode);let out;
+    try{out=fn(t)}catch(e){rej(e);return}
+    t.oncomplete=()=>Promise.resolve(out).then(res,rej);t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error);
+  }));
+}
+
+/* ---------- energy split: drivetrain, heating and other ---------- */
+/* The car reports only total battery power. While stopped with the car on, that power is just heating or cooling plus electronics,
+   so it is measured then and held while driving. Whatever is left over is drivetrain (negative when regenerating). */
+const IDLEK='evb_idle_v1';
+let idleBuf=[],idleSince=null,idleLoad=null,idleEver=false,idleWins=[],splitAux=0.4;
+const idleStore=()=>{try{return JSON.parse(localStorage.getItem(IDLEK))||[]}catch(e){return[]}};
+function auxKw(){const a=idleStore().map(x=>x[0]).sort((x,y)=>x-y);return a.length<6?0.4:Math.max(0.15,Math.min(0.8,a[Math.floor(a.length*0.1)]))}
+const hvacModel=T=>T==null?0:T<21?0.10*(21-T):T>24?Math.min(0.08*(T-24),2):0;
+function learnIdle(){
+  if(!idleWins.length)return;
+  try{localStorage.setItem(IDLEK,JSON.stringify(idleStore().concat(idleWins).slice(-80)))}catch(e){}
+  idleWins=[];
+}
+function splitStep(P,spd,tmp,now){
+  if(P==null)return null;
+  const aux=splitAux,still=(spd||0)<1;
+  if(still&&P>-0.5&&P<8){
+    if(idleSince==null){idleSince=now;idleBuf=[]}
+    idleBuf.push([now,P]);
+    const use=idleBuf.filter(x=>x[0]-idleSince>=3).map(x=>x[1]);
+    if(now-idleSince>=10&&use.length>=4){const q=use.slice().sort((a,b)=>a-b);idleLoad=q[q.length>>1];idleEver=true}
+  }else if(idleSince!=null){
+    if(now-idleSince>=10&&idleLoad!=null)idleWins.push([+idleLoad.toFixed(2),tmp==null?null:+tmp.toFixed(1)]);
+    idleSince=null;idleBuf=[];
+  }
+  const idle=idleLoad!=null?idleLoad:aux+hvacModel(tmp);
+  if(still){
+    if(P<0)return[P,0,0];                      // charging or a strange reading while stopped
+    const o=Math.min(aux,P),h=Math.max(P-o,0);return[P-o-h,h,o];
+  }
+  const h=Math.max(idle-aux,0);return[P-aux-h,h,aux];
+}
+function sumSplit(R){
+  let d=0,h=0,o=0;
+  for(let i=1;i<R.length;i++){if(R[i].d==null)continue;const dt=R[i].t-R[i-1].t;d+=R[i].d*dt/3600;h+=R[i].h*dt/3600;o+=R[i].o*dt/3600}
+  return{d,h,o};
+}
+function splitMeta(R){const S=sumSplit(R);return{d:+S.d.toFixed(3),h:+S.h.toFixed(3),o:+S.o.toFixed(3),aux:+splitAux.toFixed(2),meas:idleEver,idle:idleLoad==null?null:+idleLoad.toFixed(2)}}
+splitAux=auxKw();
+function resetTripState(){
+  rows=[];t0=0;distKm=0;kwh=0;trk=[];lastFix=null;tripId=null;LT=null;stillSince=null;lastLog=0;
+  idleBuf=[];idleSince=null;idleLoad=null;idleEver=false;idleWins=[];splitAux=auxKw();
+  tiles();draw();draw2();
+}
+async function tripDrop(id){
+  try{
+    const rng=IDBKeyRange.bound(id+':',id+':\uffff');
+    await tx(['trips','chunks','tracks'],'readwrite',t=>{t.objectStore('trips').delete(id);t.objectStore('chunks').delete(rng);t.objectStore('tracks').delete(id)});
+  }catch(e){}
+  histCount();
+}
+function logFinish(){
+  if(!demo)learnIdle();
+  if(!demo&&rows.length){saveTrip();if(rows.length>=5)tripSave(true);else if(LT){const id=LT.id;setTimeout(()=>tripDrop(id),600)}}
+  resetTripState();
+}
+async function tripSave(final){
+  const R=rows,K=trk;if(!R.length||demo)return;
+  try{
+    if(!LT){
+      const st=Date.now()-(performance.now()/1000-t0)*1000;
+      LT={id:new Date(st).toISOString().replace(/[-:T]/g,'').slice(0,14)+'-'+Math.random().toString(36).slice(2,6),start:st,pred:null,done:0};
+      if(curPlan&&Date.now()-curPlan.at<3*3600e3){LT.pred=curPlan;curPlan=null;try{localStorage.removeItem('evb_plan')}catch(e){}}
+      try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
+    }
+    const L=LT,first=R[0],last=R[R.length-1],tv=R.filter(o=>o.tmp!=null).map(o=>o.tmp);
+    const step=Math.max(1,Math.ceil(R.length/60)),spark=[];
+    for(let i=0;i<R.length;i+=step)spark.push([+R[i].km.toFixed(3),R[i].soc]);
+    spark.push([+last.km.toFixed(3),last.soc]);
+    let vmax=0;R.forEach(o=>{if((o.spd||0)>vmax)vmax=o.spd});
+    const meta={id:L.id,start:L.start,end:L.start+last.t*1000,n:R.length,km:+last.km.toFixed(3),kwh:+last.e.toFixed(3),soc0:first.soc,soc1:last.soc,
+      durS:Math.round(last.t),tAvg:tv.length?+(tv.reduce((a,b)=>a+b,0)/tv.length).toFixed(1):null,vmax:Math.round(vmax),gps:K.length,
+      elev:K.filter(p=>p.elev!=null).length,pred:L.pred,spark,ver:APPVER,type:last.km<0.2?'stationary':'drive',final:!!final,split:splitMeta(R)};
+    const lastC=Math.floor((R.length-1)/CH),chunks=[];
+    for(let c=L.done;c<=lastC;c++)chunks.push({key:L.id+':'+pad5(c),id:L.id,c,rows:R.slice(c*CH,(c+1)*CH)});
+    L.done=lastC;                                  // the newest chunk is still filling, so it is rewritten next time
+    await tx(['trips','chunks','tracks'],'readwrite',t=>{
+      t.objectStore('trips').put(meta);chunks.forEach(c=>t.objectStore('chunks').put(c));t.objectStore('tracks').put({id:L.id,trk:K});
+    });
+    if($('lgst'))$('lgst').textContent='Trip log: '+R.length+' readings saved on this phone at '+new Date().toTimeString().slice(0,8)+'. Nothing is uploaded.';
+    histCount();
+  }catch(e){if($('lgst'))$('lgst').textContent='Trip log problem: '+e.message;log('Trip log: '+e.message)}
+}
+async function histAll(){return tx(['trips'],'readonly',t=>rq(t.objectStore('trips').getAll())).then(a=>a.sort((x,y)=>y.start-x.start))}
+async function histCount(){
+  try{const a=await histAll(),km=a.filter(m=>m.type==='drive').reduce((n,m)=>n+m.km,0),d=a.filter(m=>m.type==='drive').length;
+    $('tl3').textContent=d?d+' trip'+(d>1?'s':'')+' · '+Math.round(km*KF())+' '+unit:'No trips yet'}catch(e){}
+}
+function setPlan(i){
+  const r=routes[i];if(!r||!jpar)return;
+  curPlan={at:Date.now(),dest:$('jt').value,i,km:r.km,min:r.tmin,kwh:r.kwh,arr:r.arr,start:jpar.start,eff:$('je').value,cruise:$('jv').value,cab:jpar.cab,depart:$('jl').value,
+    tAvg:r.Tmin!=null?(r.Tmin+r.Tmax)/2:null,wind:r.wavg||null,eHvac:r.eHvac||0,eCold:r.eCold||0,eHead:r.eHead||0,eTail:r.eTail||0,up:r.up,dn:r.dn,unit};
+  try{localStorage.setItem('evb_plan',JSON.stringify(curPlan))}catch(e){}
+  let msg='This route will be saved with your next trip, so its prediction can be compared with what really happens.';
+  if(LT&&!LT.pred&&rows.length&&performance.now()/1000-t0<900){LT.pred=curPlan;curPlan=null;try{localStorage.removeItem('evb_plan')}catch(e){}msg='This route is attached to the trip you have just started, so its prediction will be compared with what really happens.'}
+  jrender();$('jmsg').textContent=msg;
+}
+async function tripFull(id){
+  const rng=IDBKeyRange.bound(id+':',id+':\uffff');
+  return tx(['trips','chunks','tracks'],'readonly',t=>Promise.all([rq(t.objectStore('trips').get(id)),rq(t.objectStore('chunks').getAll(rng)),rq(t.objectStore('tracks').get(id))]))
+    .then(r=>({meta:r[0],chunks:r[1].sort((a,b)=>a.c-b.c),track:r[2]}));
+}
+const dl=(name,text,type)=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click()};
+async function histCsv(id){
+  const f=await tripFull(id),h='t_s,soc_pct,power_kw,volts,amps,outside_c,speed_kmh,distance_km,energy_kwh,gap_s,raw_2101,raw_2100,est_drivetrain_kw,est_heating_kw,est_other_kw\n';
+  const out=[];f.chunks.forEach(c=>c.rows.forEach(o=>out.push([o.t.toFixed(1),o.soc,o.kw==null?'':o.kw.toFixed(3),o.v==null?'':o.v,o.i==null?'':o.i,o.tmp==null?'':o.tmp,o.spd==null?'':o.spd,o.km.toFixed(4),o.e.toFixed(4),o.g||'',o.r||'',o.rt||'',o.d==null?'':o.d,o.h==null?'':o.h,o.o==null?'':o.o].join(','))));
+  dl('evbrain-trip-'+id+'.csv',h+out.join('\n'),'text/csv');
+}
+async function histExport(){
+  const all=await tx(['trips','chunks','tracks'],'readonly',t=>Promise.all([rq(t.objectStore('trips').getAll()),rq(t.objectStore('chunks').getAll()),rq(t.objectStore('tracks').getAll())]));
+  dl('evbrain-backup-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify({format:'evbrain-trips-v1',exported:new Date().toISOString(),trips:all[0],chunks:all[1],tracks:all[2]}),'application/json');
+  $('hmsg').textContent='Exported '+all[0].length+' trips.';
+}
+async function histImport(file){
+  try{
+    const j=JSON.parse(await file.text());if(j.format!=='evbrain-trips-v1')throw new Error('that is not an EV Brain backup file');
+    await tx(['trips','chunks','tracks'],'readwrite',t=>{j.trips.forEach(x=>t.objectStore('trips').put(x));j.chunks.forEach(x=>t.objectStore('chunks').put(x));j.tracks.forEach(x=>t.objectStore('tracks').put(x))});
+    $('hmsg').textContent='Imported '+j.trips.length+' trips.';histRender();histCount();
+  }catch(e){$('hmsg').textContent='Import failed: '+e.message}
+}
+async function histDelete(id){
+  if(!confirm('Delete this trip from this phone?'))return;
+  const rng=IDBKeyRange.bound(id+':',id+':\uffff');
+  await tx(['trips','chunks','tracks'],'readwrite',t=>{t.objectStore('trips').delete(id);t.objectStore('chunks').delete(rng);t.objectStore('tracks').delete(id)});
+  histRender();histCount();
+}
+function spark(cv,pts){
+  const w=cv.clientWidth||300,h=46,dpr=devicePixelRatio||1;cv.width=w*dpr;cv.height=h*dpr;const x=cv.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);
+  if(pts.length<2)return;
+  const k1=Math.max(pts[pts.length-1][0],0.001),ss=pts.map(p=>p[1]),lo=Math.min(...ss),hi=Math.max(...ss,lo+2);
+  x.beginPath();pts.forEach((p,i)=>{const px=p[0]/k1*(w-4)+2,py=h-3-(p[1]-lo)/(hi-lo)*(h-6);i?x.lineTo(px,py):x.moveTo(px,py)});
+  x.strokeStyle='#f2a14a';x.lineWidth=2;x.lineJoin='round';x.stroke();
+}
+async function histRender(){
+  const box=$('hlist');box.innerHTML='';
+  let all;try{all=await histAll()}catch(e){$('hmsg').textContent='Could not read saved trips: '+e.message;return}
+  try{const est=navigator.storage&&navigator.storage.estimate?await navigator.storage.estimate():null,per=navigator.storage&&navigator.storage.persisted?await navigator.storage.persisted():null;
+    $('hmsg').textContent=all.length+' saved on this phone'+(est?' · using '+(est.usage/1048576).toFixed(1)+' MB':'')+(per==null?'':per?' · storage is protected from automatic clearing':' · storage is not yet protected, press Keep storage safe')}catch(e){}
+  if(!all.length){box.innerHTML='<div class="hc"><small>No trips yet. Connect to the car and drive, and each trip is saved here automatically.</small></div>';return}
+  all.forEach(m=>{
+    const d=new Date(m.start),f=KF(),U=unit,e=m.kwh>0.05&&m.km>0.1?(m.km*f/m.kwh).toFixed(2):'–',mins=Math.round(m.durS/60);
+    const c=document.createElement('div');c.className='hc';
+    let pc='',spl='';
+    if(m.split&&m.split.d+m.split.h+m.split.o>0.05){
+      const q=m.split,t=q.d+q.h+q.o,pp=x=>Math.max(0,Math.round(x/t*100));
+      spl='<small>Drivetrain '+q.d.toFixed(1)+' kWh ('+pp(q.d)+'%) · Heating '+q.h.toFixed(1)+' ('+pp(q.h)+'%) · Other '+q.o.toFixed(1)+' ('+pp(q.o)+'%)'+(q.meas?'':' · estimated, no stops to measure')+'</small>'+
+        '<div class="sbar"><i style="width:'+pp(q.d)+'%;background:var(--kd)"></i><i style="width:'+pp(q.h)+'%;background:var(--kh)"></i><i style="width:'+pp(q.o)+'%;background:var(--ko)"></i></div>';
+    }
+    if(m.pred&&m.type==='drive'){
+      const dv=m.pred.kwh>0.05?Math.round((m.kwh-m.pred.kwh)/m.pred.kwh*100):null;
+      pc='<div class="pc">Planned '+m.pred.kwh.toFixed(1)+' kWh, actual '+m.kwh.toFixed(1)+' kWh'+(dv==null?'':' ('+(dv>0?'+':'')+dv+'%)')+' · '+Math.round(m.pred.km*f)+' '+U+' planned, '+(m.km*f).toFixed(1)+' '+U+' driven</div>';
+    }
+    c.innerHTML='<b>'+d.toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short'})+', '+d.toTimeString().slice(0,5)+(m.type==='stationary'?' · stationary':'')+'</b>'+
+      '<small>'+(m.km*f).toFixed(1)+' '+U+' · '+mins+' min · '+m.kwh.toFixed(1)+' kWh · '+e+' '+U+'/kWh</small>'+
+      '<small>Charge '+Math.round(m.soc0)+'% to '+Math.round(m.soc1)+'%'+(m.tAvg!=null?' · average '+Math.round(m.tAvg)+' °C':'')+' · top speed '+Math.round(m.vmax*f)+' '+(U==='mi'?'mph':'km/h')+'</small>'+spl+pc+
+      '<canvas></canvas><div class="acts"><button class="x">Export CSV</button><button class="dd">Delete</button></div>';
+    c.querySelector('.x').onclick=()=>histCsv(m.id);c.querySelector('.dd').onclick=()=>histDelete(m.id);
+    box.appendChild(c);spark(c.querySelector('canvas'),m.spark||[]);
+  });
+}
+$('hex').onclick=()=>histExport().catch(e=>{$('hmsg').textContent='Export failed: '+e.message});
+$('him').onclick=()=>$('hfile').click();
+$('hfile').onchange=e=>{if(e.target.files[0])histImport(e.target.files[0]);e.target.value=''};
+$('hkeep').onclick=async()=>{try{const ok=navigator.storage&&navigator.storage.persist?await navigator.storage.persist():false;$('hmsg').textContent=ok?'Done: the browser will not clear this data automatically.':'The browser declined. Installing the app to your home screen usually helps.';}catch(e){$('hmsg').textContent='Could not ask: '+e.message}};
+$('tHist').onclick=()=>show('hist');
+histCount();
 
 /* ---------- journey planner ---------- */
 let jmap=null,jmk=[],routes=[],jsel=0,leaf=null;
@@ -762,12 +998,14 @@ function jrender(){
   jcalc();const U=unit,f=KF();
   $('jres').innerHTML='';
   routes.forEach((r,i)=>{
-    const h=Math.floor(r.tmin/60),m=Math.round(r.tmin%60),b=document.createElement('button');
+    const h=Math.floor(r.tmin/60),m=Math.round(r.tmin%60),b=document.createElement('div');b.setAttribute('role','button');b.tabIndex=0;
     b.className='rt'+(i===jsel?' sel':'');
     const col=r.arr<10?'var(--bad)':r.arr<20?'var(--warn)':'var(--soc)',note=r.arr<10?' · charge needed':'';
     b.innerHTML='<b>'+(h?h+' h ':'')+m+' min · '+(r.km*f).toFixed(1)+' '+U+'</b>'+(r.tags.length?'<span class="tag">'+r.tags.join(' · ')+'</span>':'')+
       '<div class="arr" style="color:'+col+'">Arrive with about '+Math.max(r.arr,0).toFixed(0)+'%'+note+'</div>'+
       '<small>Average '+Math.round(r.vavg*f)+' '+(unit==='mi'?'mph':'km/h')+' · uses about '+r.kwh.toFixed(1)+' kWh ('+(r.kwh/64*100).toFixed(0)+'%)'+(r.hasElev?' · climb '+Math.round(r.up)+' m, descent '+Math.round(r.dn)+' m':' · elevation unavailable'+(r.err?' ('+r.err+')':''))+'</small>'+(r.Tmin!=null?'<small>'+(Math.round(r.Tmin)===Math.round(r.Tmax)?Math.round(r.Tmin):Math.round(r.Tmin)+' to '+Math.round(r.Tmax))+' °C · '+((r.Tmin+r.Tmax)/2<jpar.cab?'heating':'A/C')+' about '+r.eHvac.toFixed(1)+' kWh ('+(r.eHvac/64*100).toFixed(1)+'%)'+(r.eCold>0.05?' · cold battery +'+r.eCold.toFixed(1)+' kWh':'')+'</small><small>Wind '+Math.round(r.wavg*(unit==='mi'?2.237:3.6))+' '+(unit==='mi'?'mph':'km/h')+' · headwind adds '+r.eHead.toFixed(1)+' kWh, tailwind saves '+r.eTail.toFixed(1)+' kWh</small>':'');
+    const tb=document.createElement('button');tb.className='tk';tb.textContent=curPlan&&curPlan.i===i&&Date.now()-curPlan.at<3*3600e3?'Tracking for your next trip ✓':'Track this route for my next trip';
+    tb.onclick=ev=>{ev.stopPropagation();setPlan(i)};b.appendChild(tb);
     b.onclick=()=>{jsel=i;jrender();jdraw()};$('jres').appendChild(b);
   });
   requestAnimationFrame(()=>{jprofDraw();jbatDraw()});
