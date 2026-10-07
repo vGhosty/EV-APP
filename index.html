@@ -118,6 +118,8 @@ body.sub #bb{display:grid}
   <div id="lgst" style="margin:0 0 6px">Trip log: waiting for car data. Trips are saved on this phone only.</div>
   <div id="gst" style="margin:0 0 6px">GPS: not started</div>
   <div id="du" style="margin:-2px 0 10px">Elevation data used: 0 KB</div>
+  <div style="margin:0 0 6px"><label>Distance from <select id="dsel"><option value="auto">Auto (odometer, then GPS, then speed)</option><option value="odo">Odometer only</option><option value="gps">GPS only</option><option value="speed">Car speed only</option></select></label></div>
+  <div id="dst" style="margin:0 0 10px">Distance: waiting for data</div>
   <div id="calst" style="margin:0 0 10px"></div>
   <div class="row"><button id="bcc">Clear calibration data</button></div>
 <details>
@@ -130,6 +132,13 @@ body.sub #bb{display:grid}
   <label>Dash SoC % <input id="dS" type="number" step="0.5"></label>
   <button id="bf">Find SoC byte</button>
   <button id="bv">Find voltage byte</button>
+  <br><br>
+  <p>Odometer (cluster reply 22B002). Enter what the dash shows, connect, then press Find.</p>
+  <label>Odo byte <input id="iO" type="number" placeholder="?"></label>
+  <label>Raw unit <select id="uO"><option value="km">km</option><option value="mi">miles</option></select></label>
+  <label>Scale <select id="sO"><option value="1">1</option><option value="0.1">0.1</option></select></label>
+  <br><label>Dash odometer <input id="dO" type="number" step="1" style="width:90px"></label>
+  <button id="bo">Find odometer byte</button>
   <br><br>
   <label>Temp header <input id="hT" value="7B3"></label>
   <label>Temp byte <input id="iT" type="number" value="9"></label>
@@ -339,6 +348,12 @@ setInterval(gpsStatus,1000);
 try{if(navigator.permissions)navigator.permissions.query({name:'geolocation'}).then(p=>{gpsInfo.perm=p.state;p.onchange=()=>{gpsInfo.perm=p.state}}).catch(()=>{})}catch(e){}
 function onFix(pos){
   const c=pos.coords;gpsInfo.fix={lat:c.latitude,lon:c.longitude,acc:c.accuracy,alt:c.altitude,t:Date.now()};gpsInfo.err='';
+  const gnow=performance.now()/1000;
+  if(c.accuracy<=30){
+    if(c.speed!=null&&c.speed>=0){gpsSpd=c.speed*3.6;gpsSpdAt=gnow}
+    if(gpsPrev&&rows.length){const dk=hav(gpsPrev[0],gpsPrev[1],c.latitude,c.longitude),mv=c.speed!=null?c.speed>=1:dk>=0.012;if(mv&&dk<2)gpsDist+=dk}
+    gpsPrev=[c.latitude,c.longitude];gpsAt=gnow;gpsOk=true;
+  }
   if(c.accuracy>60||!rows.length)return;
   if(!lastFix||hav(lastFix[0],lastFix[1],c.latitude,c.longitude)>=0.05){
     lastFix=[c.latitude,c.longitude];trk.push({lat:c.latitude,lon:c.longitude,d:distKm,elev:null});
@@ -428,10 +443,11 @@ function addSample(soc,kw,tmp,spd,ex){
   const now=performance.now()/1000;
   if(rows.length&&now-lastT>300)logFinish();                    // five minutes of silence: that trip is over
   if(!t0){t0=now;lastT=now}
-  const dt=now-lastT;distKm+=(spd||0)*dt/3600;if(kw!=null)kwh+=kw*dt/3600;lastT=now;
+  const dt=now-lastT;distStep(spd,dt,now);if(kw!=null)kwh+=kw*dt/3600;lastT=now;
   if((spd||0)<1){if(!stillSince)stillSince=now}else stillSince=null;
   const row={t:now-t0,soc,kw,tmp,km:distKm,spd,e:kwh};
-  if(ex){row.v=ex.v;row.i=ex.i==null?null:+ex.i.toFixed(1);if(ex.r)row.r=ex.r;if(ex.rt)row.rt=ex.rt}
+  if(ex){row.v=ex.v;row.i=ex.i==null?null:+ex.i.toFixed(1);if(ex.r)row.r=ex.r;if(ex.rt)row.rt=ex.rt;if(ex.ro)row.ro=ex.ro}
+  row.ks=+spdDist.toFixed(3);if(odo0!=null&&odoKm!=null)row.ko=+(odoKm-odo0).toFixed(3);if(gpsOk&&gpsDist>0)row.kg=+gpsDist.toFixed(3);
   if(dt>5)row.g=Math.round(dt);
   const spl=splitStep(kw,spd,tmp,now);if(spl){row.d=+spl[0].toFixed(2);row.h=+spl[1].toFixed(2);row.o=+spl[2].toFixed(2)}                                  // marks a gap in the readings
   rows.push(row);
@@ -518,17 +534,82 @@ async function poll(){
       if(n++%15===0)log('2101 bytes: '+p.map(x=>x.toString(16).padStart(2,'0')).join(' '));
     }else if(n++%5===0)log('220101: '+r1.replace(/\s+/g,' '));
     await send('ATSH7DF');
-    const sp=bytes(await send('010D'));if(sp[0]===0x41)speed=sp[2];
+    const sp=bytes(await send('010D')),tnow=performance.now()/1000;
+    if(sp[0]===0x41){speed=sp[2];lastSpdOk=tnow}
+    else if(tnow-lastSpdOk>5&&gpsSpd!=null&&tnow-gpsSpdAt<5)speed=gpsSpd;       // car speed not answering: use GPS speed
+    let rawO=null;
+    if(n%(odoFail>5?40:4)===1){
+      await send('ATSH7C6');
+      const ro=await send('22B002'),ob=bytes(ro);lastOdo=ro;
+      if(ob[0]===0x62){odoFail=0;rawO=ob.map(hx).join('');odoRead(ob,tnow);if(n%60===1)log('22B002: '+ob.map(hx).join(' '))}
+      else{odoFail++;if(odoFail===3)log('Odometer (7C6 22B002) did not answer: '+ro.replace(/\s+/g,' '))}
+    }
     if(n%6===0){
       await send('ATSH'+$('hT').value.trim());
       const rt=await send('220100');window.lastTemp=rt;const t=bytes(rt),ti=+$('iT').value;rawT=t.map(hx).join('');
       if(t[0]===0x62&&t.length>ti)tempC=t[ti]/2-40;
       if(tempC==null||n%36===0)log('220100 ('+$('hT').value+'): '+(t.length?t.map(x=>x.toString(16).padStart(2,'0')).join(' '):rt.replace(/\s+/g,' ')));
     }
-    if(soc!=null)addSample(soc,kw,tempC,speed,{v:vol,i:cur,r:(rawN++%5===0)?p.map(hx).join(''):null,rt:rawT});
+    if(soc!=null)addSample(soc,kw,tempC,speed,{v:vol,i:cur,r:(rawN++%5===0)?p.map(hx).join(''):null,rt:rawT,ro:rawO});
   }
 }
 $('bc').onclick=()=>{if(!navigator.bluetooth){status('Web Bluetooth is not available here. Use Chrome or Edge on Android or desktop.');return}connect()};
+
+
+/* ---------- distance: odometer, GPS or speed ---------- */
+/* Auto prefers the car's odometer (its own count, steps of one unit, smoothed with speed between steps), then GPS, then adding up speed. */
+const ODOK='evb_odo_v1',DSK='evb_dsrc_v1';
+let odoKm=null,odoAt=0,odo0=null,lastOdoKm=null,odoBase=0,sinceTick=0,odoFail=0,lastOdo='',spdDist=0,gpsDist=0,gpsPrev=null,gpsAt=0,gpsOk=false,gpsSpd=null,gpsSpdAt=0,curSrc=null,distOff=0,lastSpdOk=0;
+const ODO_MI=1.609344;
+try{const q=JSON.parse(localStorage.getItem(ODOK)||'null');if(q){$('iO').value=q.i;$('uO').value=q.u;$('sO').value=q.s}}catch(e){}
+try{const q=localStorage.getItem(DSK);if(q)$('dsel').value=q}catch(e){}
+function odoSave(){try{localStorage.setItem(ODOK,JSON.stringify({i:$('iO').value,u:$('uO').value,s:$('sO').value}))}catch(e){}}
+['iO','uO','sO'].forEach(id=>$(id).addEventListener('change',odoSave));
+$('dsel').addEventListener('change',()=>{try{localStorage.setItem(DSK,$('dsel').value)}catch(e){}});
+const odoRes=()=>(+$('sO').value||1)*($('uO').value==='mi'?ODO_MI:1);   // km per odometer step
+function odoDecode(ob){
+  const i=$('iO').value===''?-1:+$('iO').value;
+  if(i<0||ob[0]!==0x62||ob.length<i+3)return null;
+  return(ob[i]<<16|ob[i+1]<<8|ob[i+2])*odoRes();
+}
+function odoRead(ob,now){
+  const v=odoDecode(ob);if(v==null||!isFinite(v)||v<=0)return;
+  if(lastOdoKm!=null&&(v-lastOdoKm>5||v<lastOdoKm-0.5))return;   // a jump like that means the byte position is wrong
+  odoKm=v;odoAt=now;
+}
+function distStep(spd,dt,now){
+  spdDist+=(spd||0)*dt/3600;
+  const mode=$('dsel').value,odoFresh=odoKm!=null&&now-odoAt<20,gpsFresh=gpsOk&&now-gpsAt<10;
+  let src='speed',raw=spdDist;
+  if((mode==='auto'||mode==='odo')&&odoFresh){
+    if(odo0==null){odo0=odoKm;lastOdoKm=odoKm;odoBase=0;sinceTick=0}
+    if(odoKm!==lastOdoKm){odoBase=odoKm-odo0;sinceTick=0;lastOdoKm=odoKm}else sinceTick+=(spd||0)*dt/3600;
+    src='odometer';raw=odoBase+Math.min(sinceTick,odoRes());
+  }else if((mode==='auto'||mode==='gps')&&gpsFresh){src='GPS';raw=gpsDist}
+  if(src!==curSrc){distOff=distKm-raw;curSrc=src}          // carry on smoothly if the source changes mid-trip
+  distKm=Math.max(distKm,raw+distOff);
+  return raw;
+}
+function distStatus(){
+  const el=$('dst');if(!el)return;const f=KF(),u=unit;
+  const od=odo0!=null&&odoKm!=null?((odoKm-odo0)*f).toFixed(2)+' '+u:(odoKm==null?'not decoded':'waiting');
+  el.textContent='Distance: using '+(curSrc||'nothing yet')+' ('+(distKm*f).toFixed(2)+' '+u+'). Odometer '+od+' · GPS '+(gpsOk&&rows.length?(gpsDist*f).toFixed(2)+' '+u:'no fix')+' · speed '+(spdDist*f).toFixed(2)+' '+u+'.'+
+    (odoKm==null?' To use the odometer, enter your dash reading under Decoding setup and press Find odometer byte.':'');
+}
+setInterval(distStatus,1500);
+$('bo').onclick=()=>{
+  const D=+$('dO').value,p=bytes(lastOdo||'');
+  if(!D||p.length<5){log('Enter the dash odometer, and connect first so a 22B002 reply is captured. Last reply: '+(lastOdo||'none').replace(/\s+/g,' '));return}
+  const dashKm=unit==='mi'?D*ODO_MI:D,dashMi=unit==='mi'?D:D/ODO_MI,hits=[];
+  for(let i=0;i+2<p.length;i++){
+    const v=p[i]<<16|p[i+1]<<8|p[i+2];
+    [[1,'1'],[0.1,'0.1']].forEach(([sc,lab])=>{const val=v*sc;
+      if(Math.abs(val-dashKm)<=1.5)hits.push({i,u:'km',s:lab,val});
+      if(Math.abs(val-dashMi)<=1.5)hits.push({i,u:'mi',s:lab,val})});
+  }
+  log('Reply bytes: '+p.map(hx).join(' ')+'\n'+(hits.length?'Matches: '+hits.map(h=>'byte '+h.i+' = '+h.val.toFixed(1)+' '+h.u+' (scale '+h.s+')').join('; '):'No byte group matches that dash reading. Try again with the exact dash figure.'));
+  if(hits.length){const h=hits[0];$('iO').value=h.i;$('uO').value=h.u;$('sO').value=h.s;odoSave();odoKm=null;odo0=null;lastOdoKm=null}
+};
 
 /* ---------- calibration helpers ---------- */
 function lastBytes(){return bytes(lastRaw)}
@@ -692,6 +773,7 @@ splitAux=auxKw();
 function resetTripState(){
   rows=[];t0=0;distKm=0;kwh=0;trk=[];lastFix=null;tripId=null;LT=null;stillSince=null;lastLog=0;
   idleBuf=[];idleSince=null;idleLoad=null;idleEver=false;idleWins=[];splitAux=auxKw();
+  odo0=null;lastOdoKm=null;odoBase=0;sinceTick=0;spdDist=0;gpsDist=0;curSrc=null;distOff=0;
   tiles();draw();draw2();
 }
 async function tripDrop(id){
@@ -722,7 +804,7 @@ async function tripSave(final){
     let vmax=0;R.forEach(o=>{if((o.spd||0)>vmax)vmax=o.spd});
     const meta={id:L.id,start:L.start,end:L.start+last.t*1000,n:R.length,km:+last.km.toFixed(3),kwh:+last.e.toFixed(3),soc0:first.soc,soc1:last.soc,
       durS:Math.round(last.t),tAvg:tv.length?+(tv.reduce((a,b)=>a+b,0)/tv.length).toFixed(1):null,vmax:Math.round(vmax),gps:K.length,
-      elev:K.filter(p=>p.elev!=null).length,pred:L.pred,spark,ver:APPVER,type:last.km<0.2?'stationary':'drive',final:!!final,split:splitMeta(R)};
+      elev:K.filter(p=>p.elev!=null).length,pred:L.pred,spark,ver:APPVER,type:last.km<0.2?'stationary':'drive',final:!!final,split:splitMeta(R),dsrc:curSrc};
     const lastC=Math.floor((R.length-1)/CH),chunks=[];
     for(let c=L.done;c<=lastC;c++)chunks.push({key:L.id+':'+pad5(c),id:L.id,c,rows:R.slice(c*CH,(c+1)*CH)});
     L.done=lastC;                                  // the newest chunk is still filling, so it is rewritten next time
@@ -754,8 +836,8 @@ async function tripFull(id){
 }
 const dl=(name,text,type)=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click()};
 async function histCsv(id){
-  const f=await tripFull(id),h='t_s,soc_pct,power_kw,volts,amps,outside_c,speed_kmh,distance_km,energy_kwh,gap_s,raw_2101,raw_2100,est_drivetrain_kw,est_heating_kw,est_other_kw\n';
-  const out=[];f.chunks.forEach(c=>c.rows.forEach(o=>out.push([o.t.toFixed(1),o.soc,o.kw==null?'':o.kw.toFixed(3),o.v==null?'':o.v,o.i==null?'':o.i,o.tmp==null?'':o.tmp,o.spd==null?'':o.spd,o.km.toFixed(4),o.e.toFixed(4),o.g||'',o.r||'',o.rt||'',o.d==null?'':o.d,o.h==null?'':o.h,o.o==null?'':o.o].join(','))));
+  const f=await tripFull(id),h='t_s,soc_pct,power_kw,volts,amps,outside_c,speed_kmh,distance_km,energy_kwh,gap_s,raw_2101,raw_2100,est_drivetrain_kw,est_heating_kw,est_other_kw,km_speed,km_odometer,km_gps,raw_odo\n';
+  const out=[];f.chunks.forEach(c=>c.rows.forEach(o=>out.push([o.t.toFixed(1),o.soc,o.kw==null?'':o.kw.toFixed(3),o.v==null?'':o.v,o.i==null?'':o.i,o.tmp==null?'':o.tmp,o.spd==null?'':o.spd,o.km.toFixed(4),o.e.toFixed(4),o.g||'',o.r||'',o.rt||'',o.d==null?'':o.d,o.h==null?'':o.h,o.o==null?'':o.o,o.ks==null?'':o.ks,o.ko==null?'':o.ko,o.kg==null?'':o.kg,o.ro||''].join(','))));
   dl('evbrain-trip-'+id+'.csv',h+out.join('\n'),'text/csv');
 }
 async function histExport(){
@@ -1347,7 +1429,7 @@ $('bfs').onclick=()=>{
 function stopDemo(){if(demo){clearInterval(demo);demo=null;$('bd').textContent='Demo drive'}}
 $('bd').onclick=()=>{
   if(demo){stopDemo();return}
-  rows=[];t0=0;distKm=0;kwh=0;trk=[];lastDemoD=0;let soc=78,t=0;$('bd').textContent='Stop demo';status('Demo data, no car connected.');
+  rows=[];t0=0;distKm=0;kwh=0;trk=[];lastDemoD=0;odo0=null;lastOdoKm=null;odoKm=null;spdDist=0;gpsDist=0;curSrc=null;distOff=0;let soc=78,t=0;$('bd').textContent='Stop demo';status('Demo data, no car connected.');
   demo=setInterval(()=>{
     t+=1;const spd=Math.max(0,55+30*Math.sin(t/25)+10*Math.sin(t/7));
     const kw=Math.max(-40,Math.min(60,(spd-50)*1.1+25*Math.cos(t/9)+10));
