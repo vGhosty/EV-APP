@@ -51,7 +51,13 @@ details{border-top:none;padding:0}
 body.sub #bb{display:grid}
 .hl{display:flex;align-items:center;gap:10px}
 #tr2{display:none;flex:1;min-height:0;flex-direction:column}
-#tr2.show{display:flex}
+#tr2.show{display:flex;overflow-y:auto}
+#m2{flex:none;display:flex;flex-direction:column;gap:8px;padding:8px 24px 70px}
+#m2 canvas{flex:none;height:340px;width:100%;touch-action:pan-y}
+#effbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;color:var(--mut);font-size:13px}
+#effbar button{padding:3px 10px;font-size:13px}
+#effbar button.on{border-color:var(--soc);color:var(--soc)}
+#effbar #efft{margin-right:6px}
 #hd2{padding:12px 16px 0}
 #big2{font-size:34px;font-weight:650;line-height:1.15}
 #sub2{color:var(--mut);font-size:14px;min-height:20px}
@@ -95,6 +101,12 @@ body.sub #bb{display:grid}
 #stats3 b{font-size:16px}
 #splitnote{padding:4px 14px 0;color:var(--mut);font-size:12px}
 .sbar{display:flex;height:6px;border-radius:3px;overflow:hidden;margin:4px 0;background:var(--line)}.sbar i{display:block;height:100%}
+#rangecard{grid-column:1/-1;background:var(--pan);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+#rangecard .rl{color:var(--mut);font-size:13px}
+#rng{font-size:40px;font-weight:650;line-height:1.15;color:var(--soc)}
+#r10{margin-top:2px;font-size:16px;color:var(--mut)}
+#r10 b{color:var(--tx);font-weight:650;font-size:20px;margin-left:6px}
+#rsub{color:var(--mut);font-size:12px;margin-top:2px}
 </style>
 </head>
 <body>
@@ -119,6 +131,7 @@ body.sub #bb{display:grid}
   <div id="gst" style="margin:0 0 6px">GPS: not started</div>
   <div id="du" style="margin:-2px 0 10px">Elevation data used: 0 KB</div>
   <div style="margin:0 0 6px"><label>Distance from <select id="dsel"><option value="auto">Auto (odometer, then GPS, then speed)</option><option value="odo">Odometer only</option><option value="gps">GPS only</option><option value="speed">Car speed only</option></select></label></div>
+  <div style="margin:0 0 8px"><label>Battery capacity <input id="bk" type="number" value="64" min="20" max="120" step="0.5" style="width:70px"> kWh</label> <small>(used for range and the journey planner)</small></div>
   <div id="dst" style="margin:0 0 10px">Distance: waiting for data</div>
   <div id="calst" style="margin:0 0 10px"></div>
   <div class="row"><button id="bcc">Clear calibration data</button></div>
@@ -148,6 +161,8 @@ body.sub #bb{display:grid}
 </details>
 </div>
 <div id="home" class="show">
+  <div id="rangecard"><div class="rl">Estimated range</div><div id="rng">–</div><div id="r10"><span id="r10l">Last 10 mi</span> <b id="rng10">–</b></div>
+  <div id="rsub">Connect to the car to see your estimated range.</div></div>
   <div id="locbar"><span id="locmsg"></span><button class="p" id="locbtn">Allow location</button></div>
   <button class="tile" id="tTrip"><strong>Trip detail<small>State of charge, power, temperature, distance</small></strong><span id="tl">No data yet</span></button>
   <button class="tile" id="tTrip2"><strong>Trip<small>Battery used over distance</small></strong><span id="tl2">No data yet</span></button>
@@ -188,7 +203,10 @@ body.sub #bb{display:grid}
   <div id="stats2"><div><small>Started</small><b id="s0">–</b></div><div><small>Now</small><b id="s1">–</b></div><div><small>Distance</small><b id="s2">–</b></div><div><small>Climb</small><b id="s3">–</b></div><div><small>Descent</small><b id="s4">–</b></div></div>
   <div id="stats3"><div class="kd"><small>Drivetrain</small><b id="sd">–</b></div><div class="kh"><small>Heating and cooling</small><b id="sh">–</b></div><div class="ko"><small>Other</small><b id="so">–</b></div></div>
   <div id="splitnote">Estimated split. The car reports only total battery power, so heating and other are measured while you are stopped with the car on, and the rest is drivetrain.</div>
-  <main><canvas id="cv2"></canvas></main>
+  <main id="m2">
+    <div id="effbar"><button id="efft" class="on">Efficiency line</button><span>rolling over the last</span><button data-w="1">1</button><button data-w="2" class="on">2</button><button data-w="5">5</button><button data-w="10">10</button><span id="effu">mi</span></div>
+    <canvas id="cv2"></canvas>
+  </main>
 </section>
 <section id="trip"><main><canvas id="cv"></canvas></main></section>
 <button class="ic" id="bfs" title="Full screen" aria-label="Full screen"><svg id="fsi" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg></button>
@@ -271,9 +289,10 @@ let hoverX2=null;
 const cv2=$('cv2');
 function niceStep(span,max){for(const st of [0.5,1,2,5,10,20,50,100,200,500]){if(span/st<=max)return st}return 1000}
 function draw2(){
+  $('effu').textContent=unit;
   const r=cv2.getBoundingClientRect(),dpr=devicePixelRatio||1;if(!r.width)return;
   cv2.width=r.width*dpr;cv2.height=r.height*dpr;const x=cv2.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);
-  const f=KF(),pts=rows.filter(o=>o.soc!=null),W=r.width,H=r.height,Lm=46,R=14,top=14,bot=30,pw=W-Lm-R,ph=H-top-bot;
+  const f=KF(),pts=rows.filter(o=>o.soc!=null),W=r.width,H=r.height,Lm=46,R=effOn?46:14,top=14,bot=30,pw=W-Lm-R,ph=H-top-bot;
   const first=pts[0],last=pts[pts.length-1],dist=last?last.km*f:0,U=unit==='mi'?'mi':'km';
   if(first){
     const used=first.soc-last.soc;
@@ -311,12 +330,21 @@ function draw2(){
   const [ex]=pxy(last);x.lineTo(ex,top+ph);x.lineTo(xs(first.km*f),top+ph);x.closePath();x.fillStyle=g;x.fill();
   x.beginPath();pts.forEach((o,i)=>{const [a,b]=pxy(o);i?x.lineTo(a,b):x.moveTo(a,b)});
   x.strokeStyle=org;x.lineWidth=2.5;x.lineJoin='round';x.stroke();
+  // efficiency on its own scale, labelled on the right
+  const ES=effOn?effSeries():null,eHi=ES?effHi(ES):0,eys=v=>top+ph-Math.min(v,eHi)/eHi*ph,teal=css('--soc');
+  if(ES){
+    x.font='13px system-ui,sans-serif';x.fillStyle=teal;x.textAlign='left';
+    const ety=eHi>8?2:1;for(let v=0;v<=eHi;v+=ety)x.fillText(v,W-R+8,eys(v)+4);
+    x.fillText(U+'/kWh',W-R-8-x.measureText(U+'/kWh').width,top-2);
+    const eline=(key,col,w,dash)=>{x.beginPath();let on=false;ES.forEach(p=>{if(p[key]==null){on=false;return}const a=xs(p.d),b=eys(p[key]);on?x.lineTo(a,b):x.moveTo(a,b);on=true});x.setLineDash(dash||[]);x.strokeStyle=col;x.lineWidth=w;x.lineJoin='round';x.stroke();x.setLineDash([])};
+    eline('avg',css('--mut'),1.5,[5,4]);eline('roll',teal,2);
+  }
   let h=last;
   if(hoverX2!=null){let bd=1e9;pts.forEach(o=>{const d=Math.abs(pxy(o)[0]-hoverX2);if(d<bd){bd=d;h=o}})}
   const [hx,hy]=pxy(h);
   if(hoverX2!=null){x.strokeStyle=css('--tx');x.globalAlpha=.35;x.lineWidth=1;x.beginPath();x.moveTo(hx,top);x.lineTo(hx,top+ph);x.stroke();x.globalAlpha=1}
   x.beginPath();x.fillStyle=org;x.arc(hx,hy,5.5,0,7);x.fill();
-  if(hoverX2!=null){let t=h.soc.toFixed(1)+'% at '+(h.km*f).toFixed(1)+' '+U;if(tp.length){let nb=tp[0];tp.forEach(p=>{if(Math.abs(p.d-h.km)<Math.abs(nb.d-h.km))nb=p});t+=' · '+Math.round(nb.elev)+' m'}x.font='600 13px system-ui,sans-serif';const w=x.measureText(t).width+16,bx=Math.min(Math.max(hx-w/2,Lm),W-R-w);
+  if(hoverX2!=null){let t=h.soc.toFixed(1)+'% at '+(h.km*f).toFixed(1)+' '+U;if(ES){let q=ES[0];ES.forEach(p=>{if(Math.abs(p.d-h.km*f)<Math.abs(q.d-h.km*f))q=p});t+=' · '+(q.roll!=null?q.roll.toFixed(1):'–')+' '+U+'/kWh now, '+(q.avg!=null?q.avg.toFixed(1):'–')+' average'}if(tp.length){let nb=tp[0];tp.forEach(p=>{if(Math.abs(p.d-h.km)<Math.abs(nb.d-h.km))nb=p});t+=' · '+Math.round(nb.elev)+' m'}x.font='600 13px system-ui,sans-serif';const w=x.measureText(t).width+16,bx=Math.min(Math.max(hx-w/2,Lm),W-R-w);
     x.fillStyle=css('--pan');x.fillRect(bx,top+2,w,24);x.strokeStyle=css('--line');x.strokeRect(bx,top+2,w,24);x.fillStyle=css('--tx');x.textAlign='left';x.fillText(t,bx+8,top+19)}
 }
 cv2.addEventListener('pointermove',e=>{hoverX2=e.clientX-cv2.getBoundingClientRect().left;draw2()});
@@ -438,6 +466,30 @@ function climb(){
 $('bgt').onclick=()=>{gpsOn=true;$('bg').textContent='Location: on';gpsInfo.err='';startGps();gpsStatus()};
 $('bg').onclick=()=>{gpsOn=!gpsOn;$('bg').textContent='Location: '+(gpsOn?'on':'off');if(!gpsOn)stopGps();else if(connected)startGps()};
 
+
+/* ---------- efficiency along the trip ---------- */
+let effW=2,effOn=true;
+function effSeries(){
+  const f=KF(),n=rows.length,W=effW/f,out=[];let j=0;
+  for(let i=0;i<n;i++){
+    const o=rows[i];
+    const avg=o.km>0.05&&o.e>0.05?o.km*f/o.e:null;
+    while(j+1<i&&rows[j+1].km<=o.km-W)j++;
+    let roll=null;
+    if(rows[j].km<=o.km-W){const de=o.e-rows[j].e;if(de>0.03)roll=(o.km-rows[j].km)*f/de}
+    out.push({d:o.km*f,roll,avg});
+  }
+  return out;
+}
+function effHi(S){
+  const vals=[];S.forEach(p=>{if(p.roll!=null)vals.push(p.roll);if(p.avg!=null)vals.push(p.avg)});
+  const cap=12*(unit==='mi'?1:1.609344);vals.sort((a,b)=>a-b);
+  const hi=vals.length?Math.min(cap,Math.max(vals[Math.floor(vals.length*0.97)]*1.1,3)):6;
+  return Math.max(2,Math.ceil(hi));
+}
+document.querySelectorAll('#effbar button[data-w]').forEach(b=>b.onclick=()=>{effW=+b.dataset.w;document.querySelectorAll('#effbar button[data-w]').forEach(q=>q.classList.toggle('on',q===b));draw2()});
+$('efft').onclick=()=>{effOn=!effOn;$('efft').classList.toggle('on',effOn);draw2()};
+
 /* ---------- sample handling ---------- */
 function addSample(soc,kw,tmp,spd,ex){
   const now=performance.now()/1000;
@@ -461,7 +513,22 @@ let kwh=0;
 function eff(){
   const d=distKm*KF();return (kwh>0.1&&d>0.1?(d/kwh).toFixed(2):'–')+' '+unit+'/kWh';
 }
+function rangeUpdate(){
+  const l=rows[rows.length-1],u=unit;
+  $('r10l').textContent='Last 10 '+u;
+  if(!l){$('rng').textContent='–';$('rng10').textContent='–';$('rsub').textContent='Connect to the car to see your estimated range.';return}
+  const left=l.soc/100*battKwh(),d=distKm*KF(),own=kwh>0.3&&d>0.5;
+  const e=own?d/kwh:(CAL?KF()/CAL.c:4/0.621371*KF());
+  $('rng').textContent=Math.round(left*e)+' '+u;
+  $('rsub').textContent=own?'':'Using a typical efficiency until you have driven a short way.';
+  // efficiency over the most recent 10 miles (or kilometres), or the whole trip while it is shorter than that
+  const winKm=10/KF(),target=distKm-winKm;let j=rows.length-1;
+  while(j>0&&rows[j].km>target)j--;
+  const dk=(l.km-rows[j].km)*KF(),de=l.e-rows[j].e;
+  $('rng10').textContent=dk>=1&&de>0.2?Math.round(left*dk/de)+' '+u:'–';
+}
 function tiles(){
+  rangeUpdate();
   const l=rows[rows.length-1];
   if(!l){$('tl').textContent=$('tl2').textContent='No data yet';return}
   const u0=rows[0].soc-l.soc,e='<small>'+eff()+' average</small>';
@@ -734,6 +801,10 @@ function tx(stores,mode,fn){
 /* ---------- energy split: drivetrain, heating and other ---------- */
 /* The car reports only total battery power. While stopped with the car on, that power is just heating or cooling plus electronics,
    so it is measured then and held while driving. Whatever is left over is drivetrain (negative when regenerating). */
+const BKK='evb_batt_v1';
+try{const q=localStorage.getItem(BKK);if(q)$('bk').value=q}catch(e){}
+const battKwh=()=>Math.max(20,Math.min(120,+$('bk').value||64));
+$('bk').addEventListener('change',()=>{try{localStorage.setItem(BKK,$('bk').value)}catch(e){}tiles();if(routes.length)jrender()});
 const IDLEK='evb_idle_v1';
 let idleBuf=[],idleSince=null,idleLoad=null,idleEver=false,idleWins=[],splitAux=0.4;
 const idleStore=()=>{try{return JSON.parse(localStorage.getItem(IDLEK))||[]}catch(e){return[]}};
@@ -1070,7 +1141,7 @@ function jcalc(){
     const tv=r.T.filter(v=>v!=null);r.Tmin=tv.length?Math.min(...tv):null;r.Tmax=tv.length?Math.max(...tv):null;
     r.tmin=hrs*60;r.vavg=r.km/hrs;
     r.kwh=Math.max(flat+r.up*cu-r.dn*cd,0);
-    r.arr=startPct-r.kwh/64*100;
+    r.arr=startPct-r.kwh/battKwh()*100;
   });
   jpar={cons,cu,cd,start:startPct,cab};
   const mt=Math.min(...routes.map(r=>r.tmin)),md=Math.min(...routes.map(r=>r.km)),me=Math.min(...routes.map(r=>r.kwh));
@@ -1085,7 +1156,7 @@ function jrender(){
     const col=r.arr<10?'var(--bad)':r.arr<20?'var(--warn)':'var(--soc)',note=r.arr<10?' · charge needed':'';
     b.innerHTML='<b>'+(h?h+' h ':'')+m+' min · '+(r.km*f).toFixed(1)+' '+U+'</b>'+(r.tags.length?'<span class="tag">'+r.tags.join(' · ')+'</span>':'')+
       '<div class="arr" style="color:'+col+'">Arrive with about '+Math.max(r.arr,0).toFixed(0)+'%'+note+'</div>'+
-      '<small>Average '+Math.round(r.vavg*f)+' '+(unit==='mi'?'mph':'km/h')+' · uses about '+r.kwh.toFixed(1)+' kWh ('+(r.kwh/64*100).toFixed(0)+'%)'+(r.hasElev?' · climb '+Math.round(r.up)+' m, descent '+Math.round(r.dn)+' m':' · elevation unavailable'+(r.err?' ('+r.err+')':''))+'</small>'+(r.Tmin!=null?'<small>'+(Math.round(r.Tmin)===Math.round(r.Tmax)?Math.round(r.Tmin):Math.round(r.Tmin)+' to '+Math.round(r.Tmax))+' °C · '+((r.Tmin+r.Tmax)/2<jpar.cab?'heating':'A/C')+' about '+r.eHvac.toFixed(1)+' kWh ('+(r.eHvac/64*100).toFixed(1)+'%)'+(r.eCold>0.05?' · cold battery +'+r.eCold.toFixed(1)+' kWh':'')+'</small><small>Wind '+Math.round(r.wavg*(unit==='mi'?2.237:3.6))+' '+(unit==='mi'?'mph':'km/h')+' · headwind adds '+r.eHead.toFixed(1)+' kWh, tailwind saves '+r.eTail.toFixed(1)+' kWh</small>':'');
+      '<small>Average '+Math.round(r.vavg*f)+' '+(unit==='mi'?'mph':'km/h')+' · uses about '+r.kwh.toFixed(1)+' kWh ('+(r.kwh/battKwh()*100).toFixed(0)+'%)'+(r.hasElev?' · climb '+Math.round(r.up)+' m, descent '+Math.round(r.dn)+' m':' · elevation unavailable'+(r.err?' ('+r.err+')':''))+'</small>'+(r.Tmin!=null?'<small>'+(Math.round(r.Tmin)===Math.round(r.Tmax)?Math.round(r.Tmin):Math.round(r.Tmin)+' to '+Math.round(r.Tmax))+' °C · '+((r.Tmin+r.Tmax)/2<jpar.cab?'heating':'A/C')+' about '+r.eHvac.toFixed(1)+' kWh ('+(r.eHvac/64*100).toFixed(1)+'%)'+(r.eCold>0.05?' · cold battery +'+r.eCold.toFixed(1)+' kWh':'')+'</small><small>Wind '+Math.round(r.wavg*(unit==='mi'?2.237:3.6))+' '+(unit==='mi'?'mph':'km/h')+' · headwind adds '+r.eHead.toFixed(1)+' kWh, tailwind saves '+r.eTail.toFixed(1)+' kWh</small>':'');
     const tb=document.createElement('button');tb.className='tk';tb.textContent=curPlan&&curPlan.i===i&&Date.now()-curPlan.at<3*3600e3?'Tracking for your next trip ✓':'Track this route for my next trip';
     tb.onclick=ev=>{ev.stopPropagation();setPlan(i)};b.appendChild(tb);
     b.onclick=()=>{jsel=i;jrender();jdraw()};$('jres').appendChild(b);
@@ -1255,7 +1326,7 @@ function jbatArr(r){
   let U=0,D=0,ref=r.el?r.el[0]:null;
   for(let i=0;i<n;i++){
     if(r.el){const e=r.el[i],d=e-ref;if(d>=5){U+=d;ref=e}else if(d<=-5){D-=d;ref=e}}
-    out.push(P.start-(r.cum[i]+P.cu*U-P.cd*D)/64*100);
+    out.push(P.start-(r.cum[i]+P.cu*U-P.cd*D)/battKwh()*100);
   }
   return out;
 }
