@@ -104,6 +104,8 @@ body.sub #bb{display:grid}
 #rangecard{grid-column:1/-1;background:var(--pan);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
 #rangecard .rl{color:var(--mut);font-size:13px}
 #rng{font-size:40px;font-weight:650;line-height:1.15;color:var(--soc)}
+.rrow{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+#rleft{font-size:14px;color:var(--mut)}
 #r10{margin-top:2px;font-size:16px;color:var(--mut)}
 #r10 b{color:var(--tx);font-weight:650;font-size:20px;margin-left:6px}
 #rsub{color:var(--mut);font-size:12px;margin-top:2px}
@@ -161,7 +163,7 @@ body.sub #bb{display:grid}
 </details>
 </div>
 <div id="home" class="show">
-  <div id="rangecard"><div class="rl">Estimated range</div><div id="rng">–</div><div id="r10"><span id="r10l">Last 10 mi</span> <b id="rng10">–</b></div>
+  <div id="rangecard"><div class="rl">Estimated range</div><div class="rrow"><span id="rng">–</span><span id="rleft"></span></div><div id="r10"><span id="r10l">Last 10 mi</span> <b id="rng10">–</b></div>
   <div id="rsub">Connect to the car to see your estimated range.</div></div>
   <div id="locbar"><span id="locmsg"></span><button class="p" id="locbtn">Allow location</button></div>
   <button class="tile" id="tTrip"><strong>Trip detail<small>State of charge, power, temperature, distance</small></strong><span id="tl">No data yet</span></button>
@@ -516,10 +518,11 @@ function eff(){
 function rangeUpdate(){
   const l=rows[rows.length-1],u=unit;
   $('r10l').textContent='Last 10 '+u;
-  if(!l){$('rng').textContent='–';$('rng10').textContent='–';$('rsub').textContent='Connect to the car to see your estimated range.';return}
+  if(!l){$('rng').textContent='–';$('rleft').textContent='';$('rng10').textContent='–';$('rsub').textContent='Connect to the car to see your estimated range.';return}
   const left=l.soc/100*battKwh(),d=distKm*KF(),own=kwh>0.3&&d>0.5;
   const e=own?d/kwh:(CAL?KF()/CAL.c:4/0.621371*KF());
   $('rng').textContent=Math.round(left*e)+' '+u;
+  $('rleft').textContent=left.toFixed(1)+' kWh · '+Number(l.soc.toFixed(1))+'% left';
   $('rsub').textContent=own?'':'Using a typical efficiency until you have driven a short way.';
   // efficiency over the most recent 10 miles (or kilometres), or the whole trip while it is shorter than that
   const winKm=10/KF(),target=distKm-winKm;let j=rows.length-1;
